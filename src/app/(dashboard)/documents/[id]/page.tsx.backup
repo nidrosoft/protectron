@@ -1,0 +1,642 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { useParams } from "next/navigation";
+import NextLink from "next/link";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
+import TextAlign from "@tiptap/extension-text-align";
+import Underline from "@tiptap/extension-underline";
+import TiptapLink from "@tiptap/extension-link";
+import Highlight from "@tiptap/extension-highlight";
+import { TextStyle } from "@tiptap/extension-text-style";
+import Color from "@tiptap/extension-color";
+import Image from "@tiptap/extension-image";
+import { Table } from "@tiptap/extension-table";
+import { TableRow } from "@tiptap/extension-table-row";
+import { TableCell } from "@tiptap/extension-table-cell";
+import { TableHeader } from "@tiptap/extension-table-header";
+import {
+  ArrowLeft,
+  DocumentDownload,
+  TickCircle,
+  DocumentText1,
+  ClipboardText,
+  Note,
+  Document,
+  Sms,
+  Save2,
+  Edit2,
+} from "iconsax-react";
+import {
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  Strikethrough,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  List,
+  ListOrdered,
+  Quote,
+  Undo,
+  Redo,
+  Link as LinkIcon,
+  Highlighter,
+  Type,
+  Image as ImageIcon,
+  Table2,
+  Code as CodeIcon,
+  Minus as MinusIcon,
+} from "lucide-react";
+import { Button } from "@/components/base/buttons/button";
+import { Badge, BadgeWithDot } from "@/components/base/badges/badges";
+import { useToast } from "@/components/base/toast/toast";
+import { cx } from "@/utils/cx";
+
+// Mock document data
+const mockDocuments: Record<string, {
+  id: string;
+  name: string;
+  type: "technical" | "risk" | "policy" | "model_card";
+  systemId: string;
+  systemName: string;
+  status: "draft" | "final";
+  generatedAt: string;
+  updatedAt: string;
+  content: string;
+}> = {
+  "doc-01": {
+    id: "doc-01",
+    name: "Technical Documentation - Customer Support Chatbot",
+    type: "technical",
+    systemId: "system-01",
+    systemName: "Customer Support Chatbot",
+    status: "final",
+    generatedAt: "Dec 10, 2025",
+    updatedAt: "Dec 12, 2025",
+    content: `
+      <h1>Technical Documentation</h1>
+      <h2>Customer Support Chatbot</h2>
+      
+      <h3>1. General Description</h3>
+      <h4>1.1 Intended Purpose</h4>
+      <p>This AI system is designed to provide automated customer support through natural language conversations. The system analyzes customer inquiries and provides relevant responses based on the company's knowledge base, FAQs, and product documentation.</p>
+      
+      <h4>1.2 Intended Users</h4>
+      <ul>
+        <li>Customer service representatives</li>
+        <li>End customers seeking support</li>
+        <li>Support team supervisors</li>
+      </ul>
+      
+      <h4>1.3 Deployment Context</h4>
+      <p>The chatbot is deployed on the company's website and mobile application, accessible 24/7 to customers worldwide. It operates as a first-line support tool, escalating complex issues to human agents when necessary.</p>
+      
+      <h3>2. Technical Specifications</h3>
+      <h4>2.1 System Architecture</h4>
+      <p>The system utilizes a transformer-based large language model (LLM) fine-tuned on customer support conversations. Key components include:</p>
+      <ul>
+        <li><strong>Natural Language Understanding (NLU):</strong> Processes and interprets customer queries</li>
+        <li><strong>Intent Classification:</strong> Categorizes queries into predefined support categories</li>
+        <li><strong>Response Generation:</strong> Produces contextually appropriate responses</li>
+        <li><strong>Knowledge Retrieval:</strong> Fetches relevant information from the knowledge base</li>
+      </ul>
+      
+      <h4>2.2 Data Processing</h4>
+      <p>The system processes the following data types:</p>
+      <ul>
+        <li>Customer text inputs (queries, follow-up questions)</li>
+        <li>Conversation history within a session</li>
+        <li>Product and service documentation</li>
+        <li>Historical support tickets (anonymized)</li>
+      </ul>
+      
+      <h3>3. Performance Metrics</h3>
+      <p>The system is evaluated on the following key performance indicators:</p>
+      <ul>
+        <li><strong>Response Accuracy:</strong> 94% of responses rated as helpful by customers</li>
+        <li><strong>First Contact Resolution:</strong> 78% of queries resolved without human escalation</li>
+        <li><strong>Average Response Time:</strong> 1.2 seconds</li>
+        <li><strong>Customer Satisfaction Score:</strong> 4.5/5.0</li>
+      </ul>
+      
+      <h3>4. Human Oversight</h3>
+      <p>Human oversight is maintained through:</p>
+      <ul>
+        <li>Real-time monitoring dashboard for support supervisors</li>
+        <li>Automatic escalation triggers for sensitive topics</li>
+        <li>Weekly review of flagged conversations</li>
+        <li>Monthly performance audits by the AI governance team</li>
+      </ul>
+      
+      <h3>5. Compliance Statement</h3>
+      <p>This AI system has been classified as <strong>Limited Risk</strong> under the EU AI Act. As such, it complies with transparency requirements by clearly identifying itself as an AI system to users at the start of each conversation.</p>
+    `,
+  },
+  "doc-02": {
+    id: "doc-02",
+    name: "Risk Assessment - Automated Hiring Screener",
+    type: "risk",
+    systemId: "system-02",
+    systemName: "Automated Hiring Screener",
+    status: "draft",
+    generatedAt: "Dec 8, 2025",
+    updatedAt: "Dec 11, 2025",
+    content: `
+      <h1>Risk Assessment Report</h1>
+      <h2>Automated Hiring Screener</h2>
+      
+      <h3>1. Executive Summary</h3>
+      <p>This risk assessment evaluates the Automated Hiring Screener AI system, which is classified as <strong>High-Risk</strong> under the EU AI Act due to its use in employment decisions. The assessment identifies key risks and proposes mitigation strategies to ensure compliance and ethical operation.</p>
+      
+      <h3>2. System Overview</h3>
+      <p>The Automated Hiring Screener analyzes job applications to identify qualified candidates based on resume content, skills matching, and job requirements. It provides ranking scores to assist human recruiters in the initial screening process.</p>
+      
+      <h3>3. Identified Risks</h3>
+      
+      <h4>3.1 Bias and Discrimination Risk</h4>
+      <p><strong>Risk Level: High</strong></p>
+      <p>The system may perpetuate historical biases present in training data, potentially discriminating against protected groups based on gender, age, ethnicity, or disability status.</p>
+      <p><strong>Mitigation:</strong> Regular bias audits, diverse training data, fairness constraints in the model, and human review of all final decisions.</p>
+      
+      <h4>3.2 Transparency Risk</h4>
+      <p><strong>Risk Level: Medium</strong></p>
+      <p>Candidates may not understand why they were rejected, leading to lack of transparency in the hiring process.</p>
+      <p><strong>Mitigation:</strong> Provide explanations for screening decisions, maintain audit logs, and offer appeal mechanisms.</p>
+      
+      <h4>3.3 Data Quality Risk</h4>
+      <p><strong>Risk Level: Medium</strong></p>
+      <p>Poor quality or incomplete resume data may lead to inaccurate assessments.</p>
+      <p><strong>Mitigation:</strong> Data validation checks, multiple data sources, and human verification of edge cases.</p>
+      
+      <h3>4. Compliance Requirements</h3>
+      <ul>
+        <li>Conformity assessment before deployment</li>
+        <li>Registration in EU database for high-risk AI systems</li>
+        <li>Comprehensive technical documentation</li>
+        <li>Quality management system implementation</li>
+        <li>Post-market monitoring plan</li>
+      </ul>
+      
+      <h3>5. Recommendations</h3>
+      <p>Based on this assessment, we recommend:</p>
+      <ol>
+        <li>Conducting quarterly bias audits with third-party validators</li>
+        <li>Implementing explainable AI features for decision transparency</li>
+        <li>Establishing a human-in-the-loop process for all final hiring decisions</li>
+        <li>Creating a candidate appeal process for automated rejections</li>
+      </ol>
+    `,
+  },
+};
+
+const documentTypeConfig = {
+  technical: { label: "Technical Doc", color: "brand" as const, icon: DocumentText1, bgColor: "bg-brand-100", textColor: "text-brand-600" },
+  risk: { label: "Risk Assessment", color: "warning" as const, icon: ClipboardText, bgColor: "bg-warning-100", textColor: "text-warning-600" },
+  policy: { label: "Policy", color: "purple" as const, icon: Note, bgColor: "bg-purple-100", textColor: "text-purple-600" },
+  model_card: { label: "Model Card", color: "blue" as const, icon: Document, bgColor: "bg-blue-100", textColor: "text-blue-600" },
+};
+
+const statusConfig = {
+  draft: { label: "Draft", color: "warning" as const },
+  final: { label: "Final", color: "success" as const },
+};
+
+// Toolbar Button Component
+const ToolbarButton = ({
+  onClick,
+  isActive,
+  disabled,
+  children,
+  title,
+}: {
+  onClick: () => void;
+  isActive?: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+  title?: string;
+}) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    title={title}
+    className={cx(
+      "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
+      isActive ? "bg-brand-100 text-brand-600" : "text-tertiary hover:bg-secondary hover:text-primary",
+      disabled && "opacity-50 cursor-not-allowed"
+    )}
+  >
+    {children}
+  </button>
+);
+
+const ToolbarDivider = () => <div className="h-6 w-px bg-secondary mx-1" />;
+
+export default function DocumentEditorPage() {
+  const params = useParams();
+  const documentId = params.id as string;
+  const { addToast } = useToast();
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  // Get document data
+  const document = mockDocuments[documentId] || mockDocuments["doc-01"];
+  const typeConfig = documentTypeConfig[document.type];
+  const TypeIcon = typeConfig.icon;
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3, 4],
+        },
+      }),
+      Placeholder.configure({
+        placeholder: "Start writing your document...",
+      }),
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+      }),
+      Underline,
+      TiptapLink.configure({
+        openOnClick: false,
+      }),
+      Highlight.configure({
+        multicolor: true,
+      }),
+      TextStyle,
+      Color,
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+      }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+    ],
+    content: document.content,
+    editable: isEditing,
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class: "prose prose-sm sm:prose lg:prose-lg max-w-none focus:outline-none min-h-[500px] px-8 py-6",
+      },
+    },
+  });
+
+  const handleSave = useCallback(() => {
+    if (!editor) return;
+    
+    setIsSaving(true);
+    setTimeout(() => {
+      setIsSaving(false);
+      setLastSaved(new Date());
+      console.log("Document saved:", editor.getHTML());
+      addToast({
+        type: "success",
+        title: "Document saved",
+        message: "Your changes have been saved successfully.",
+      });
+    }, 1000);
+  }, [editor, addToast]);
+
+  const handleToggleEdit = () => {
+    if (isEditing && editor) {
+      handleSave();
+    }
+    setIsEditing(!isEditing);
+    editor?.setEditable(!isEditing);
+  };
+
+  const addLink = useCallback(() => {
+    if (!editor) return;
+    const url = window.prompt("Enter URL:");
+    if (url) {
+      editor.chain().focus().setLink({ href: url }).run();
+    }
+  }, [editor]);
+
+  const addImage = useCallback(() => {
+    if (!editor) return;
+    const url = window.prompt("Enter image URL:");
+    if (url) {
+      editor.chain().focus().setImage({ src: url }).run();
+    }
+  }, [editor]);
+
+  const insertTable = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  }, [editor]);
+
+  if (!editor) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden bg-secondary_subtle">
+      {/* Header */}
+      <div className="shrink-0 border-b border-secondary bg-primary px-6 py-4 lg:px-8">
+        {/* Back link */}
+        <NextLink
+          href="/documents"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-tertiary hover:text-secondary"
+        >
+          <ArrowLeft size={16} color="currentColor" />
+          Back to Documents
+        </NextLink>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={cx("flex h-10 w-10 items-center justify-center rounded-lg", typeConfig.bgColor)}>
+              <TypeIcon size={20} className={typeConfig.textColor} color="currentColor" variant="Bold" />
+            </div>
+            <div>
+              <h1 className="text-md font-semibold text-primary">{document.name}</h1>
+              <div className="flex items-center gap-2 text-sm text-tertiary">
+                <span>{document.systemName}</span>
+                <span>•</span>
+                <BadgeWithDot size="sm" color={statusConfig[document.status].color}>
+                  {statusConfig[document.status].label}
+                </BadgeWithDot>
+                {lastSaved && (
+                  <>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <TickCircle size={14} color="currentColor" className="text-success-500" />
+                      Saved
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              color="secondary"
+              iconLeading={({ className }) => <Sms size={18} color="currentColor" className={className} />}
+              onClick={() => alert("Email functionality coming soon!")}
+            >
+              Email
+            </Button>
+            <Button
+              size="sm"
+              color="secondary"
+              iconLeading={({ className }) => <DocumentDownload size={18} color="currentColor" className={className} />}
+              onClick={() => alert("Download functionality coming soon!")}
+            >
+              Download
+            </Button>
+            <Button
+              size="sm"
+              color={isEditing ? "primary" : "secondary"}
+              iconLeading={({ className }) => isEditing 
+                ? <Save2 size={18} color="currentColor" className={className} /> 
+                : <Edit2 size={18} color="currentColor" className={className} />
+              }
+              onClick={handleToggleEdit}
+              isDisabled={isSaving}
+            >
+              {isSaving ? "Saving..." : isEditing ? "Save & Exit" : "Edit Document"}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Toolbar - Only show when editing */}
+      {isEditing && (
+        <div className="shrink-0 border-b border-secondary bg-primary py-2">
+          <div className="mx-auto max-w-4xl px-6 lg:px-8">
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              {/* Text formatting */}
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                isActive={editor.isActive("bold")}
+                title="Bold"
+              >
+                <Bold size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                isActive={editor.isActive("italic")}
+                title="Italic"
+              >
+                <Italic size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleUnderline().run()}
+                isActive={editor.isActive("underline")}
+                title="Underline"
+              >
+                <UnderlineIcon size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleStrike().run()}
+                isActive={editor.isActive("strike")}
+                title="Strikethrough"
+              >
+                <Strikethrough size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleHighlight().run()}
+                isActive={editor.isActive("highlight")}
+                title="Highlight"
+              >
+                <Highlighter size={16} />
+              </ToolbarButton>
+
+              <ToolbarDivider />
+
+              {/* Headings */}
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                isActive={editor.isActive("heading", { level: 1 })}
+                title="Heading 1"
+              >
+                <span className="text-xs font-bold">H1</span>
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                isActive={editor.isActive("heading", { level: 2 })}
+                title="Heading 2"
+              >
+                <span className="text-xs font-bold">H2</span>
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                isActive={editor.isActive("heading", { level: 3 })}
+                title="Heading 3"
+              >
+                <span className="text-xs font-bold">H3</span>
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().setParagraph().run()}
+                isActive={editor.isActive("paragraph")}
+                title="Paragraph"
+              >
+                <Type size={16} />
+              </ToolbarButton>
+
+              <ToolbarDivider />
+
+              {/* Alignment */}
+              <ToolbarButton
+                onClick={() => editor.chain().focus().setTextAlign("left").run()}
+                isActive={editor.isActive({ textAlign: "left" })}
+                title="Align Left"
+              >
+                <AlignLeft size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().setTextAlign("center").run()}
+                isActive={editor.isActive({ textAlign: "center" })}
+                title="Align Center"
+              >
+                <AlignCenter size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().setTextAlign("right").run()}
+                isActive={editor.isActive({ textAlign: "right" })}
+                title="Align Right"
+              >
+                <AlignRight size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+                isActive={editor.isActive({ textAlign: "justify" })}
+                title="Justify"
+              >
+                <AlignJustify size={16} />
+              </ToolbarButton>
+
+              <ToolbarDivider />
+
+              {/* Lists */}
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleBulletList().run()}
+                isActive={editor.isActive("bulletList")}
+                title="Bullet List"
+              >
+                <List size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                isActive={editor.isActive("orderedList")}
+                title="Numbered List"
+              >
+                <ListOrdered size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                isActive={editor.isActive("blockquote")}
+                title="Quote"
+              >
+                <Quote size={16} />
+              </ToolbarButton>
+
+              <ToolbarDivider />
+
+              {/* Link */}
+              <ToolbarButton
+                onClick={addLink}
+                isActive={editor.isActive("link")}
+                title="Add Link"
+              >
+                <LinkIcon size={16} />
+              </ToolbarButton>
+
+              <ToolbarDivider />
+
+              {/* Insert */}
+              <ToolbarButton
+                onClick={addImage}
+                title="Insert Image"
+              >
+                <ImageIcon size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={insertTable}
+                title="Insert Table"
+              >
+                <Table2 size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                isActive={editor.isActive("codeBlock")}
+                title="Code Block"
+              >
+                <CodeIcon size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                title="Horizontal Rule"
+              >
+                <MinusIcon size={16} />
+              </ToolbarButton>
+
+              <ToolbarDivider />
+
+              {/* Undo/Redo */}
+              <ToolbarButton
+                onClick={() => editor.chain().focus().undo().run()}
+                disabled={!editor.can().undo()}
+                title="Undo"
+              >
+                <Undo size={16} />
+              </ToolbarButton>
+              <ToolbarButton
+                onClick={() => editor.chain().focus().redo().run()}
+                disabled={!editor.can().redo()}
+                title="Redo"
+              >
+                <Redo size={16} />
+              </ToolbarButton>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Editor Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-4xl py-8 px-6 lg:px-8">
+          <div className={cx(
+            "rounded-xl bg-primary shadow-sm ring-1 ring-secondary ring-inset",
+            isEditing && "ring-2 ring-brand-500"
+          )}>
+            <EditorContent editor={editor} />
+          </div>
+        </div>
+      </div>
+
+      {/* Footer - Document info */}
+      <div className="shrink-0 border-t border-secondary bg-primary px-6 py-3 lg:px-8">
+        <div className="flex items-center justify-between text-sm text-tertiary">
+          <div className="flex items-center gap-4">
+            <span>Generated: {document.generatedAt}</span>
+            <span>•</span>
+            <span>Last updated: {document.updatedAt}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge size="sm" color={typeConfig.color}>
+              {typeConfig.label}
+            </Badge>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

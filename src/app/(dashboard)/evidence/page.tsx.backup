@@ -1,0 +1,513 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import type { Key } from "react-aria-components";
+import {
+  FolderOpen,
+  DocumentUpload,
+  SearchNormal1,
+  Cpu,
+} from "iconsax-react";
+import { Button } from "@/components/base/buttons/button";
+import { Badge } from "@/components/base/badges/badges";
+import { Select, type SelectItemType } from "@/components/base/select/select";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { FileIcon } from "@untitledui/file-icons";
+import { Table, TableCard, TableRowActionsDropdown } from "@/components/application/table/table";
+import { Avatar } from "@/components/base/avatar/avatar";
+import { UploadModal } from "@/components/application/modals/upload-modal";
+import { EvidenceDetailSlideout } from "@/components/application/slideout-menus/evidence-detail-slideout";
+import { ConfirmationModal } from "@/components/application/modals/confirmation-modal";
+import { cx } from "@/utils/cx";
+
+// Filter options
+const typeFilterOptions: SelectItemType[] = [
+  { id: "all", label: "All Types" },
+  { id: "pdf", label: "PDF" },
+  { id: "csv", label: "CSV" },
+  { id: "xlsx", label: "Excel" },
+  { id: "json", label: "JSON" },
+  { id: "png", label: "Image" },
+];
+
+const systemFilterOptions: SelectItemType[] = [
+  { id: "all", label: "All Systems" },
+  { id: "system-01", label: "Customer Support Chatbot" },
+  { id: "system-02", label: "Automated Hiring Screener" },
+  { id: "system-03", label: "Fraud Detection System" },
+];
+
+const linkedToFilterOptions: SelectItemType[] = [
+  { id: "all", label: "All Categories" },
+  { id: "risk-management", label: "Risk Management System" },
+  { id: "data-governance", label: "Data Governance" },
+  { id: "human-oversight", label: "Human Oversight" },
+  { id: "technical-documentation", label: "Technical Documentation" },
+];
+
+// Mock evidence data
+const mockEvidence: {
+  id: string;
+  name: string;
+  type: string;
+  systemId: string;
+  systemName: string;
+  linkedTo: string;
+  linkedToId: string;
+  uploadedBy: string;
+  uploadedByAvatar: string;
+  uploadedAt: string;
+  size: string;
+}[] = [
+  {
+    id: "ev-1",
+    name: "risk_management_policy.pdf",
+    type: "PDF",
+    systemId: "system-02",
+    systemName: "Automated Hiring Screener",
+    linkedTo: "Risk Management System",
+    linkedToId: "risk-management",
+    uploadedBy: "David Park",
+    uploadedByAvatar: "https://www.untitledui.com/images/avatars/phoenix-baker?fm=webp&q=80",
+    uploadedAt: "Dec 1, 2024",
+    size: "450 KB",
+  },
+  {
+    id: "ev-2",
+    name: "bias_audit_report.pdf",
+    type: "PDF",
+    systemId: "system-02",
+    systemName: "Automated Hiring Screener",
+    linkedTo: "Data Governance",
+    linkedToId: "data-governance",
+    uploadedBy: "Sarah Chen",
+    uploadedByAvatar: "https://www.untitledui.com/images/avatars/lana-steiner?fm=webp&q=80",
+    uploadedAt: "Nov 28, 2024",
+    size: "780 KB",
+  },
+  {
+    id: "ev-3",
+    name: "human_review_logs.csv",
+    type: "CSV",
+    systemId: "system-02",
+    systemName: "Automated Hiring Screener",
+    linkedTo: "Human Oversight",
+    linkedToId: "human-oversight",
+    uploadedBy: "John Miller",
+    uploadedByAvatar: "https://www.untitledui.com/images/avatars/demi-wilkinson?fm=webp&q=80",
+    uploadedAt: "Dec 8, 2024",
+    size: "125 KB",
+  },
+  {
+    id: "ev-4",
+    name: "training_data_manifest.xlsx",
+    type: "XLSX",
+    systemId: "system-02",
+    systemName: "Automated Hiring Screener",
+    linkedTo: "Data Governance",
+    linkedToId: "data-governance",
+    uploadedBy: "Olivia Rhye",
+    uploadedByAvatar: "https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80",
+    uploadedAt: "Nov 25, 2024",
+    size: "2.3 MB",
+  },
+  {
+    id: "ev-5",
+    name: "model_validation_results.pdf",
+    type: "PDF",
+    systemId: "system-03",
+    systemName: "Fraud Detection System",
+    linkedTo: "Technical Documentation",
+    linkedToId: "technical-documentation",
+    uploadedBy: "David Park",
+    uploadedByAvatar: "https://www.untitledui.com/images/avatars/phoenix-baker?fm=webp&q=80",
+    uploadedAt: "Nov 20, 2024",
+    size: "1.8 MB",
+  },
+  {
+    id: "ev-6",
+    name: "fairness_metrics.json",
+    type: "JSON",
+    systemId: "system-02",
+    systemName: "Automated Hiring Screener",
+    linkedTo: "Data Governance",
+    linkedToId: "data-governance",
+    uploadedBy: "Sarah Chen",
+    uploadedByAvatar: "https://www.untitledui.com/images/avatars/lana-steiner?fm=webp&q=80",
+    uploadedAt: "Nov 18, 2024",
+    size: "45 KB",
+  },
+  {
+    id: "ev-7",
+    name: "system_architecture_diagram.png",
+    type: "PNG",
+    systemId: "system-01",
+    systemName: "Customer Support Chatbot",
+    linkedTo: "Technical Documentation",
+    linkedToId: "technical-documentation",
+    uploadedBy: "John Miller",
+    uploadedByAvatar: "https://www.untitledui.com/images/avatars/demi-wilkinson?fm=webp&q=80",
+    uploadedAt: "Nov 15, 2024",
+    size: "3.2 MB",
+  },
+  {
+    id: "ev-8",
+    name: "oversight_committee_minutes.pdf",
+    type: "PDF",
+    systemId: "system-01",
+    systemName: "Customer Support Chatbot",
+    linkedTo: "Human Oversight",
+    linkedToId: "human-oversight",
+    uploadedBy: "Olivia Rhye",
+    uploadedByAvatar: "https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80",
+    uploadedAt: "Nov 10, 2024",
+    size: "320 KB",
+  },
+  {
+    id: "ev-9",
+    name: "data_quality_assessment.pdf",
+    type: "PDF",
+    systemId: "system-03",
+    systemName: "Fraud Detection System",
+    linkedTo: "Data Governance",
+    linkedToId: "data-governance",
+    uploadedBy: "David Park",
+    uploadedByAvatar: "https://www.untitledui.com/images/avatars/phoenix-baker?fm=webp&q=80",
+    uploadedAt: "Nov 5, 2024",
+    size: "890 KB",
+  },
+  {
+    id: "ev-10",
+    name: "incident_log_q4.csv",
+    type: "CSV",
+    systemId: "system-03",
+    systemName: "Fraud Detection System",
+    linkedTo: "Risk Management System",
+    linkedToId: "risk-management",
+    uploadedBy: "Sarah Chen",
+    uploadedByAvatar: "https://www.untitledui.com/images/avatars/lana-steiner?fm=webp&q=80",
+    uploadedAt: "Oct 30, 2024",
+    size: "156 KB",
+  },
+];
+
+
+// Get file icon type
+const getFileIconType = (type: string): string => {
+  const typeMap: Record<string, string> = {
+    PDF: "pdf",
+    CSV: "csv",
+    XLSX: "xls",
+    JSON: "json",
+    PNG: "image",
+    JPG: "image",
+    JPEG: "image",
+  };
+  return typeMap[type.toUpperCase()] || "file";
+};
+
+// Linked to badge color
+const getLinkedToBadgeColor = (linkedToId: string): "brand" | "warning" | "purple" | "blue" => {
+  const colorMap: Record<string, "brand" | "warning" | "purple" | "blue"> = {
+    "risk-management": "warning",
+    "data-governance": "purple",
+    "human-oversight": "blue",
+    "technical-documentation": "brand",
+  };
+  return colorMap[linkedToId] || "brand";
+};
+
+export default function EvidencePage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [systemFilter, setSystemFilter] = useState("all");
+  const [linkedToFilter, setLinkedToFilter] = useState("all");
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isDetailSlideoutOpen, setIsDetailSlideoutOpen] = useState(false);
+  const [selectedEvidence, setSelectedEvidence] = useState<typeof mockEvidence[0] | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [evidenceToDelete, setEvidenceToDelete] = useState<typeof mockEvidence[0] | null>(null);
+
+  const handleRowClick = (evidence: typeof mockEvidence[0]) => {
+    setSelectedEvidence(evidence);
+    setIsDetailSlideoutOpen(true);
+  };
+
+  const handleDeleteRequest = (evidence: typeof mockEvidence[0]) => {
+    setEvidenceToDelete(evidence);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (evidenceToDelete) {
+      console.log("Deleted evidence:", evidenceToDelete.id);
+      // In a real app, this would call an API to delete the evidence
+    }
+    setIsDeleteModalOpen(false);
+    setEvidenceToDelete(null);
+    setIsDetailSlideoutOpen(false);
+  };
+
+  // Filter evidence
+  const filteredEvidence = useMemo(() => {
+    return mockEvidence.filter((evidence) => {
+      const matchesSearch = evidence.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        evidence.linkedTo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        evidence.uploadedBy.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = typeFilter === "all" || evidence.type.toLowerCase() === typeFilter;
+      const matchesSystem = systemFilter === "all" || evidence.systemId === systemFilter;
+      const matchesLinkedTo = linkedToFilter === "all" || evidence.linkedToId === linkedToFilter;
+      return matchesSearch && matchesType && matchesSystem && matchesLinkedTo;
+    });
+  }, [searchQuery, typeFilter, systemFilter, linkedToFilter]);
+
+  const isEmpty = mockEvidence.length === 0;
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* Header */}
+      <div className="shrink-0 border-b border-secondary bg-primary px-6 py-5 lg:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-display-sm font-semibold text-primary">Evidence</h1>
+            <p className="mt-1 text-sm text-tertiary">
+              Upload and manage evidence files to support your compliance requirements.
+            </p>
+          </div>
+          <Button
+            size="md"
+            color="primary"
+            iconLeading={({ className }) => <DocumentUpload size={20} color="currentColor" className={className} />}
+            onClick={() => setIsUploadModalOpen(true)}
+          >
+            Upload Evidence
+          </Button>
+        </div>
+
+        {/* Filters */}
+        {!isEmpty && (
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
+              <SearchNormal1 
+                size={20} 
+                color="currentColor" 
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-quaternary z-10" 
+              />
+              <input
+                type="text"
+                placeholder="Search evidence..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-secondary bg-primary py-2 pl-10 pr-4 text-sm text-primary placeholder:text-quaternary focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+            <Select
+              size="sm"
+              placeholder="All Types"
+              selectedKey={typeFilter}
+              onSelectionChange={(key: Key | null) => key && setTypeFilter(String(key))}
+              items={typeFilterOptions}
+            >
+              {(item) => <Select.Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Select.Item>}
+            </Select>
+            <div className="w-[220px]">
+              <Select
+                size="sm"
+                placeholder="All Systems"
+                selectedKey={systemFilter}
+                onSelectionChange={(key: Key | null) => key && setSystemFilter(String(key))}
+                items={systemFilterOptions}
+              >
+              {(item) => <Select.Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Select.Item>}
+              </Select>
+            </div>
+            <div className="w-[200px]">
+              <Select
+                size="sm"
+                placeholder="All Categories"
+              selectedKey={linkedToFilter}
+              onSelectionChange={(key: Key | null) => key && setLinkedToFilter(String(key))}
+                items={linkedToFilterOptions}
+              >
+                {(item) => <Select.Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Select.Item>}
+              </Select>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
+        {/* Empty State */}
+        {isEmpty && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <FeaturedIcon color="brand" size="xl" theme="light">
+              <FolderOpen size={28} color="currentColor" variant="Bold" />
+            </FeaturedIcon>
+            <h3 className="mt-4 text-lg font-semibold text-primary">No Evidence Uploaded</h3>
+            <p className="mt-2 max-w-md text-center text-sm text-tertiary">
+              Upload evidence files to support your compliance requirements. Evidence can include policies, 
+              audit reports, test results, and other documentation.
+            </p>
+            <Button
+              size="lg"
+              color="primary"
+              className="mt-6"
+              iconLeading={({ className }) => <DocumentUpload size={20} color="currentColor" className={className} />}
+              onClick={() => setIsUploadModalOpen(true)}
+            >
+              Upload Your First Evidence
+            </Button>
+          </div>
+        )}
+
+        {/* Evidence Table */}
+        {!isEmpty && filteredEvidence.length > 0 && (
+          <TableCard.Root>
+            <Table aria-label="Evidence" selectionMode="none">
+              <Table.Header>
+                <Table.Head id="name" isRowHeader label="File Name" />
+                <Table.Head id="system" label="AI System" />
+                <Table.Head id="linkedTo" label="Linked To" />
+                <Table.Head id="uploadedBy" label="Uploaded By" />
+                <Table.Head id="date" label="Date" />
+                <Table.Head id="actions" />
+              </Table.Header>
+              <Table.Body items={filteredEvidence}>
+                {(evidence: typeof mockEvidence[0]) => (
+                  <Table.Row id={evidence.id} className="odd:bg-secondary_subtle cursor-pointer hover:bg-secondary_hover" onAction={() => handleRowClick(evidence)}>
+                    <Table.Cell>
+                      <div className="flex items-center gap-3">
+                        <FileIcon type={getFileIconType(evidence.type)} theme="light" className="size-10 dark:hidden" />
+                        <FileIcon type={getFileIconType(evidence.type)} theme="dark" className="size-10 not-dark:hidden" />
+                        <div>
+                          <p className="text-sm font-medium text-primary">{evidence.name}</p>
+                          <p className="text-sm text-tertiary">{evidence.size}</p>
+                        </div>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="flex items-center gap-2">
+                        <Cpu size={16} color="currentColor" className="text-tertiary" />
+                        <span className="text-sm text-secondary whitespace-nowrap">{evidence.systemName}</span>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Badge size="sm" color={getLinkedToBadgeColor(evidence.linkedToId)}>
+                        {evidence.linkedTo}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <div className="flex items-center gap-2">
+                        <Avatar src={evidence.uploadedByAvatar} size="xs" />
+                        <span className="text-sm text-secondary whitespace-nowrap">{evidence.uploadedBy}</span>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm text-tertiary whitespace-nowrap">{evidence.uploadedAt}</span>
+                    </Table.Cell>
+                    <Table.Cell className="px-4">
+                      <TableRowActionsDropdown />
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+              </Table.Body>
+            </Table>
+          </TableCard.Root>
+        )}
+
+        {/* No Results */}
+        {!isEmpty && filteredEvidence.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <FeaturedIcon color="gray" size="xl" theme="light">
+              <SearchNormal1 size={28} color="currentColor" />
+            </FeaturedIcon>
+            <h3 className="mt-4 text-lg font-semibold text-primary">No Results Found</h3>
+            <p className="mt-2 max-w-md text-center text-sm text-tertiary">
+              No evidence files match your current filters. Try adjusting your search or filters.
+            </p>
+            <Button
+              size="md"
+              color="secondary"
+              className="mt-4"
+              onClick={() => {
+                setSearchQuery("");
+                setTypeFilter("all");
+                setSystemFilter("all");
+                setLinkedToFilter("all");
+              }}
+            >
+              Clear Filters
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Storage Usage Footer */}
+      {!isEmpty && (
+        <div className="shrink-0 border-t border-secondary bg-primary px-6 py-3 lg:px-8">
+          <div className="flex items-center justify-between text-sm text-tertiary">
+            <div className="flex items-center gap-4">
+              <span>{mockEvidence.length} files</span>
+              <span>•</span>
+              <span>Storage used: 10.2 MB of 5 GB</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-32 rounded-full bg-quaternary">
+                <div className="h-2 w-1 rounded-full bg-brand-500" />
+              </div>
+              <span>0.2%</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Evidence Modal */}
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onOpenChange={setIsUploadModalOpen}
+        title="Upload Evidence"
+        description="Upload evidence files to support your compliance requirements. Supported formats: PDF, CSV, Excel, JSON, and images."
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.json,.png,.jpg,.jpeg"
+        allowsMultiple={true}
+        maxSize={25 * 1024 * 1024}
+        uploadButtonText="Upload Evidence"
+        onUpload={(files) => {
+          console.log("Uploaded files:", files);
+        }}
+      />
+
+      {/* Evidence Detail Slideout */}
+      <EvidenceDetailSlideout
+        isOpen={isDetailSlideoutOpen}
+        onOpenChange={setIsDetailSlideoutOpen}
+        evidence={selectedEvidence}
+        onSave={(updatedEvidence) => {
+          console.log("Saved evidence:", updatedEvidence);
+          setIsDetailSlideoutOpen(false);
+        }}
+        onDelete={() => {
+          if (selectedEvidence) {
+            handleDeleteRequest(selectedEvidence);
+          }
+        }}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        variant="destructive"
+        title="Delete Evidence"
+        description={`Are you sure you want to delete "${evidenceToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setEvidenceToDelete(null);
+        }}
+      />
+    </div>
+  );
+}

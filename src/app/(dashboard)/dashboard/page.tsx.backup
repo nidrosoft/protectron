@@ -1,0 +1,616 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  Cpu,
+  DocumentText,
+  Warning2,
+  TickCircle,
+  Clock,
+  Add,
+  ArrowRight,
+  InfoCircle,
+  Danger,
+  Chart,
+  ShieldTick,
+  Task,
+} from "iconsax-react";
+import { Plus, AlertCircle, Calendar, TrendUp01, TrendDown01, Edit05, Upload01, CheckCircle, Eye, DotsVertical, ChevronDown } from "@untitledui/icons";
+import { Dropdown } from "@/components/base/dropdown/dropdown";
+import { Avatar } from "@/components/base/avatar/avatar";
+import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
+import { FeedItem, type FeedItemType } from "@/components/application/activity-feed/activity-feed";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { MetricsChart04 } from "@/components/application/metrics/metrics";
+import { ProgressBar, ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
+import { ProgressBarCircle } from "@/components/base/progress-indicators/progress-circles";
+import { Badge, BadgeWithDot } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { Table, TableCard } from "@/components/application/table/table";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { cx } from "@/utils/cx";
+
+// Mock user data (will come from auth later)
+const currentUser = {
+  name: "Olivia",
+  company: "Acme Corp",
+};
+
+// Mock recent activity data using FeedItemType
+const recentActivity: FeedItemType[] = [
+  {
+    id: "activity-001",
+    unseen: true,
+    date: "2 hours ago",
+    user: {
+      avatarUrl: "https://www.untitledui.com/images/avatars/phoenix-baker?fm=webp&q=80",
+      name: "Sarah Chen",
+      href: "#",
+      status: "online",
+    },
+    action: {
+      content: "Completed requirement",
+      target: "Risk Assessment Documentation",
+      href: "#",
+    },
+  },
+  {
+    id: "activity-002",
+    unseen: true,
+    date: "4 hours ago",
+    user: {
+      avatarUrl: "https://www.untitledui.com/images/avatars/lana-steiner?fm=webp&q=80",
+      name: "John Miller",
+      href: "#",
+      status: "offline",
+    },
+    attachment: {
+      type: "pdf",
+      name: "Model Training Data Audit.pdf",
+      size: "1.2 MB",
+    },
+    action: {
+      content: "Uploaded evidence to",
+      target: "Fraud Detection System",
+      href: "#",
+    },
+  },
+  {
+    id: "activity-003",
+    date: "Yesterday",
+    user: {
+      avatarUrl: "https://www.untitledui.com/images/avatars/demi-wilkinson?fm=webp&q=80",
+      name: "Olivia Rhye",
+      href: "#",
+      status: "online",
+    },
+    attachment: {
+      type: "pdf",
+      name: "Technical Documentation.pdf",
+      size: "720 KB",
+    },
+    action: {
+      content: "Generated document for",
+      target: "Customer Chatbot",
+      href: "#",
+    },
+  },
+  {
+    id: "activity-004",
+    date: "2 days ago",
+    user: {
+      avatarUrl: "https://www.untitledui.com/images/avatars/candice-wu?fm=webp&q=80",
+      name: "David Park",
+      href: "#",
+      status: "online",
+    },
+    action: {
+      content: "Added new AI system",
+      target: "Lead Scoring Model",
+      href: "#",
+    },
+  },
+];
+
+// Mock team activity data
+const teamActivity = [
+  { name: "Sarah Chen", initials: "SC", completedToday: 3, avatar: null },
+  { name: "John Miller", initials: "JM", completedToday: 2, avatar: null },
+  { name: "David Park", initials: "DP", completedToday: 1, avatar: null },
+];
+
+// Mock data for AI Systems
+const aiSystems = [
+  {
+    id: "system-01",
+    name: "Customer Support Chatbot",
+    riskLevel: "limited" as const,
+    status: "compliant" as const,
+    progress: 100,
+    requirements: { completed: 8, total: 8 },
+    deadline: null,
+  },
+  {
+    id: "system-02",
+    name: "Automated Hiring Screener",
+    riskLevel: "high" as const,
+    status: "in_progress" as const,
+    progress: 50,
+    requirements: { completed: 12, total: 24 },
+    deadline: "Aug 2, 2026",
+  },
+  {
+    id: "system-03",
+    name: "Fraud Detection System",
+    riskLevel: "high" as const,
+    status: "in_progress" as const,
+    progress: 75,
+    requirements: { completed: 18, total: 24 },
+    deadline: "Aug 2, 2026",
+  },
+  {
+    id: "system-04",
+    name: "Content Recommender",
+    riskLevel: "minimal" as const,
+    status: "compliant" as const,
+    progress: 100,
+    requirements: { completed: 4, total: 4 },
+    deadline: null,
+  },
+  {
+    id: "system-05",
+    name: "Lead Scoring Model",
+    riskLevel: "limited" as const,
+    status: "not_started" as const,
+    progress: 0,
+    requirements: { completed: 0, total: 8 },
+    deadline: null,
+  },
+];
+
+// Risk level config
+const riskLevelConfig = {
+  high: { label: "High Risk", color: "warning" as const, icon: Warning2 },
+  limited: { label: "Limited", color: "blue" as const, icon: InfoCircle },
+  minimal: { label: "Minimal", color: "success" as const, icon: TickCircle },
+};
+
+// Status config
+const statusConfig = {
+  compliant: { label: "Compliant", color: "success" as const },
+  in_progress: { label: "In Progress", color: "warning" as const },
+  not_started: { label: "Not Started", color: "gray" as const },
+};
+
+// Calculate days until deadline
+function daysUntil(dateStr: string): number {
+  const target = new Date(dateStr);
+  const now = new Date();
+  const diff = target.getTime() - now.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+export default function DashboardPage() {
+  // Calculate overall stats
+  const totalRequirements = aiSystems.reduce((sum, s) => sum + s.requirements.total, 0);
+  const completedRequirements = aiSystems.reduce((sum, s) => sum + s.requirements.completed, 0);
+  const overallProgress = Math.round((completedRequirements / totalRequirements) * 100);
+  
+  const compliantCount = aiSystems.filter(s => s.status === "compliant").length;
+  const inProgressCount = aiSystems.filter(s => s.status === "in_progress").length;
+  const notStartedCount = aiSystems.filter(s => s.status === "not_started").length;
+
+  return (
+    <div className="flex flex-col gap-8 p-6 lg:p-8">
+      {/* Header with Welcome Message */}
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold text-primary lg:text-display-xs">
+            Welcome back, {currentUser.name}
+          </h1>
+          <p className="text-md text-tertiary">
+            Track, manage and monitor your EU AI Act compliance status.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button size="md" color="secondary" iconLeading={Calendar}>
+            View Deadlines
+          </Button>
+          <Dropdown.Root>
+            <Button size="md" iconTrailing={ChevronDown}>
+              Quick Actions
+            </Button>
+            <Dropdown.Popover>
+              <Dropdown.Menu>
+                <Dropdown.Item label="Add AI System" icon={Plus} href="/ai-systems/new" />
+                <Dropdown.Item label="Generate Document" icon={Edit05} onAction={() => {}} />
+                <Dropdown.Item label="Upload Evidence" icon={Upload01} onAction={() => {}} />
+                <Dropdown.Item label="Mark Requirement Complete" icon={CheckCircle} onAction={() => {}} />
+              </Dropdown.Menu>
+            </Dropdown.Popover>
+          </Dropdown.Root>
+        </div>
+      </div>
+
+      {/* Key Metrics Row - 5 Stat Cards using MetricsChart04 */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <MetricsChart04
+          title={`${overallProgress}%`}
+          subtitle="Compliance Score"
+          change="12%"
+          changeTrend="positive"
+          changeDescription="vs last month"
+          chartColor="text-fg-success-secondary"
+          chartData={[
+            { value: 45 }, { value: 48 }, { value: 52 }, { value: 55 },
+            { value: 58 }, { value: 60 }, { value: 62 },
+          ]}
+        />
+        <MetricsChart04
+          title={`${aiSystems.length}`}
+          subtitle="AI Systems"
+          change="2"
+          changeTrend="positive"
+          changeDescription="new this month"
+          chartColor="text-fg-brand-primary"
+          chartData={[
+            { value: 2 }, { value: 2 }, { value: 3 }, { value: 3 },
+            { value: 4 }, { value: 4 }, { value: 5 },
+          ]}
+        />
+        <MetricsChart04
+          title={`${completedRequirements}/${totalRequirements}`}
+          subtitle="Requirements Done"
+          change="8"
+          changeTrend="positive"
+          changeDescription="completed"
+          chartColor="text-fg-success-secondary"
+          chartData={[
+            { value: 20 }, { value: 25 }, { value: 30 }, { value: 34 },
+            { value: 38 }, { value: 40 }, { value: 42 },
+          ]}
+        />
+        <MetricsChart04
+          title="12"
+          subtitle="Documents"
+          change="3"
+          changeTrend="positive"
+          changeDescription="generated"
+          chartColor="text-fg-brand-primary"
+          chartData={[
+            { value: 5 }, { value: 6 }, { value: 8 }, { value: 9 },
+            { value: 10 }, { value: 11 }, { value: 12 },
+          ]}
+        />
+        <MetricsChart04
+          title="8"
+          subtitle="Pending Actions"
+          change="3"
+          changeTrend="negative"
+          changeDescription="urgent"
+          chartColor="text-fg-error-secondary"
+          chartData={[
+            { value: 5 }, { value: 6 }, { value: 7 }, { value: 8 },
+            { value: 9 }, { value: 8 }, { value: 8 },
+          ]}
+        />
+      </div>
+
+      {/* Overall Compliance Status Card */}
+      <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary ring-inset">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-12">
+          {/* Progress Circle */}
+          <div className="flex items-center gap-6">
+            <ProgressBarCircle 
+              value={overallProgress} 
+              size="md" 
+              label="Compliance"
+            />
+          </div>
+          
+          {/* Stats */}
+          <div className="flex flex-1 flex-col gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-primary">Overall Compliance Status</h2>
+              <p className="text-sm text-tertiary">
+                {completedRequirements} of {totalRequirements} requirements complete
+              </p>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-tertiary">Progress</span>
+                <span className="font-medium text-primary">{overallProgress}%</span>
+              </div>
+              <ProgressBarBase value={overallProgress} className="h-3" />
+            </div>
+            
+            <div className="flex items-center gap-2 rounded-lg bg-warning-50 px-3 py-2">
+              <AlertCircle className="h-5 w-5 text-warning-600" />
+              <span className="text-sm font-medium text-warning-700">
+                Next deadline: Aug 2, 2026 (High-Risk AI) — {daysUntil("Aug 2, 2026")} days
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* New Section: Recent Activity, Risk Distribution, Team Activity */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Recent Activity */}
+        <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-primary">Recent Activity</h3>
+            <Link href="/activity" className="text-sm font-medium text-brand-600 hover:text-brand-700">
+              View all
+            </Link>
+          </div>
+          <ul className="flex flex-col gap-4 divide-y divide-border-secondary">
+            {recentActivity.map((item) => (
+              <li key={item.id} className="pt-4 first:pt-0">
+                <FeedItem {...item} connector={false} size="sm" />
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Right Column: Risk Distribution + Team Activity */}
+        <div className="flex flex-col gap-6">
+          {/* Risk Distribution Chart */}
+          <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset">
+            <h3 className="mb-4 text-lg font-semibold text-primary">Risk Distribution</h3>
+            <div className="flex items-center gap-4">
+              <div className="h-24 w-24 shrink-0">
+                <ResponsiveContainer width={96} height={96}>
+                  <PieChart width={96} height={96}>
+                    <Pie
+                      data={[
+                        { name: "High Risk", value: aiSystems.filter(s => s.riskLevel === "high").length, color: "#F79009" },
+                        { name: "Limited", value: aiSystems.filter(s => s.riskLevel === "limited").length, color: "#2E90FA" },
+                        { name: "Minimal", value: aiSystems.filter(s => s.riskLevel === "minimal").length, color: "#12B76A" },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={25}
+                      outerRadius={40}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      <Cell fill="#F79009" />
+                      <Cell fill="#2E90FA" />
+                      <Cell fill="#12B76A" />
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-warning-500" />
+                  <span className="text-sm text-secondary">{aiSystems.filter(s => s.riskLevel === "high").length} High Risk</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                  <span className="text-sm text-secondary">{aiSystems.filter(s => s.riskLevel === "limited").length} Limited</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-success-500" />
+                  <span className="text-sm text-secondary">{aiSystems.filter(s => s.riskLevel === "minimal").length} Minimal</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Team Activity */}
+          <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset">
+            <h3 className="mb-4 text-lg font-semibold text-primary">Team Activity</h3>
+            <div className="flex flex-col gap-3">
+              {teamActivity.map((member) => (
+                <div key={member.name} className="flex items-center justify-between">
+                  <AvatarLabelGroup
+                    size="sm"
+                    initials={member.initials}
+                    title={member.name}
+                    subtitle=""
+                    className="flex-1 min-w-0"
+                  />
+                  <Badge color="success" size="sm">{member.completedToday} today</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards Row */}
+      <div className="grid gap-5 md:grid-cols-3">
+        {/* AI Systems Card */}
+        <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset">
+          <div className="flex items-start justify-between">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100">
+              <Cpu size={20} color="currentColor" className="text-brand-600" variant="Bold" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-display-sm font-semibold text-primary">{aiSystems.length}</p>
+            <p className="text-sm text-tertiary">AI Systems</p>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Badge color="success" size="sm">{compliantCount} Compliant</Badge>
+            <Badge color="warning" size="sm">{inProgressCount} In Progress</Badge>
+            <Badge color="gray" size="sm">{notStartedCount} Not Started</Badge>
+          </div>
+          <Link href="/ai-systems" className="mt-4 flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700">
+            View all <ArrowRight size={16} color="currentColor" />
+          </Link>
+        </div>
+
+        {/* Documents Card */}
+        <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset">
+          <div className="flex items-start justify-between">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+              <DocumentText size={20} color="currentColor" className="text-purple-600" variant="Bold" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-display-sm font-semibold text-primary">12</p>
+            <p className="text-sm text-tertiary">Documents Generated</p>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Badge color="gray" size="sm">8 Technical</Badge>
+            <Badge color="gray" size="sm">4 Policies</Badge>
+          </div>
+          <Link href="/documents" className="mt-4 flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700">
+            View all <ArrowRight size={16} color="currentColor" />
+          </Link>
+        </div>
+
+        {/* Pending Actions Card */}
+        <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset">
+          <div className="flex items-start justify-between">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-error-100">
+              <Danger size={20} color="currentColor" className="text-error-600" variant="Bold" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-display-sm font-semibold text-primary">8</p>
+            <p className="text-sm text-tertiary">Pending Actions</p>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Badge color="error" size="sm">3 Urgent</Badge>
+            <Badge color="warning" size="sm">5 Upcoming</Badge>
+          </div>
+          <Link href="/requirements" className="mt-4 flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700">
+            View all <ArrowRight size={16} color="currentColor" />
+          </Link>
+        </div>
+      </div>
+
+      {/* AI Systems Table */}
+      <div className="flex flex-col gap-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-primary">Compliance by AI System</h2>
+          <Button size="sm" color="secondary" iconLeading={Plus} href="/ai-systems/new">
+            Add System
+          </Button>
+        </div>
+
+        <TableCard.Root>
+          <Table aria-label="AI Systems">
+            <Table.Header>
+              <Table.Head id="name" isRowHeader label="AI System" className="w-full" />
+              <Table.Head id="risk" label="Risk Level" />
+              <Table.Head id="status" label="Status" />
+              <Table.Head id="progress" label="Progress" className="min-w-32" />
+              <Table.Head id="deadline" label="Deadline" />
+              <Table.Head id="actions" label="" className="w-12" />
+            </Table.Header>
+            <Table.Body items={aiSystems}>
+              {(system) => (
+                <Table.Row id={system.id}>
+                  <Table.Cell>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+                        <Cpu size={20} color="currentColor" className="text-gray-600" variant="Linear" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-primary">{system.name}</p>
+                        <p className="text-sm text-tertiary">
+                          {system.requirements.completed}/{system.requirements.total} requirements
+                        </p>
+                      </div>
+                    </div>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <BadgeWithDot
+                      size="sm"
+                      type="modern"
+                      color={riskLevelConfig[system.riskLevel].color}
+                    >
+                      {riskLevelConfig[system.riskLevel].label}
+                    </BadgeWithDot>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <BadgeWithDot
+                      size="sm"
+                      type="modern"
+                      color={statusConfig[system.status].color}
+                    >
+                      {statusConfig[system.status].label}
+                    </BadgeWithDot>
+                  </Table.Cell>
+                  <Table.Cell>
+                    <div className="flex items-center gap-3">
+                      <ProgressBarBase value={system.progress} className="w-20" />
+                      <span className="text-sm font-medium text-secondary">{system.progress}%</span>
+                    </div>
+                  </Table.Cell>
+                  <Table.Cell>
+                    {system.deadline ? (
+                      <span className="text-sm text-warning-600 font-medium">
+                        {system.deadline}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-tertiary">—</span>
+                    )}
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Dropdown.Root>
+                      <Dropdown.DotsButton />
+                      <Dropdown.Popover>
+                        <Dropdown.Menu>
+                          <Dropdown.Item label="View Details" icon={Eye} href={`/ai-systems/${system.id}`} />
+                          <Dropdown.Item label="Edit System" icon={Edit05} onAction={() => {}} />
+                          <Dropdown.Item label="Upload Evidence" icon={Upload01} onAction={() => {}} />
+                          <Dropdown.Separator />
+                          <Dropdown.Item label="Mark Complete" icon={CheckCircle} onAction={() => {}} />
+                        </Dropdown.Menu>
+                      </Dropdown.Popover>
+                    </Dropdown.Root>
+                  </Table.Cell>
+                </Table.Row>
+              )}
+            </Table.Body>
+          </Table>
+        </TableCard.Root>
+      </div>
+
+      {/* Upcoming Deadlines */}
+      <div className="flex flex-col gap-5">
+        <h2 className="text-lg font-semibold text-primary">Upcoming Deadlines</h2>
+        
+        <div className="flex flex-col gap-4">
+          {/* High-Risk Deadline */}
+          <div className="flex items-start gap-4 rounded-xl border border-warning-200 bg-warning-50 p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning-100">
+              <AlertCircle className="h-5 w-5 text-warning-600" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-warning-900">Aug 2, 2026</p>
+                <Badge color="warning" size="sm">{daysUntil("Aug 2, 2026")} days</Badge>
+              </div>
+              <p className="text-sm text-warning-700">High-Risk AI compliance deadline</p>
+              <p className="mt-1 text-sm text-warning-600">→ 2 systems need attention</p>
+            </div>
+          </div>
+
+          {/* Legacy Systems Deadline */}
+          <div className="flex items-start gap-4 rounded-xl border border-secondary bg-secondary_subtle p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100">
+              <Calendar className="h-5 w-5 text-gray-600" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-primary">Aug 2, 2027</p>
+                <Badge color="gray" size="sm">{daysUntil("Aug 2, 2027")} days</Badge>
+              </div>
+              <p className="text-sm text-tertiary">Legacy systems deadline</p>
+              <p className="mt-1 text-sm text-tertiary">→ No systems affected</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

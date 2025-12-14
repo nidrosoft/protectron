@@ -1,0 +1,661 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ShieldTick,
+  Danger,
+  Warning2,
+  InfoCircle,
+  TickCircle,
+  ArrowRight,
+  DocumentDownload,
+  Chart,
+  DocumentText,
+  Shield,
+  Cpu,
+  Clock,
+} from "iconsax-react";
+import { AlertCircle, Calendar, CheckCircle, Flag05 } from "@untitledui/icons";
+import { Button } from "@/components/base/buttons/button";
+import { Progress } from "@/components/application/progress-steps/progress-steps";
+import type { ProgressFeaturedIconType } from "@/components/application/progress-steps/progress-types";
+import { cx } from "@/utils/cx";
+
+interface AssessmentData {
+  companyName: string;
+  industry: string;
+  companySize: string;
+  country: string;
+  hasEUCustomers: boolean;
+  hasEUOperations: boolean;
+  processesEUData: boolean;
+  aiSystemTypes: string[];
+  useCases: string[];
+  dataTypes: string[];
+  decisionImpact: string;
+  automationLevel: string;
+}
+
+interface RiskResult {
+  level: "prohibited" | "high" | "limited" | "minimal";
+  count: number;
+  label: string;
+  description: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  icon: typeof Danger;
+}
+
+function calculateRiskResults(data: AssessmentData): {
+  results: RiskResult[];
+  complianceScore: number;
+  hasEUExposure: boolean;
+  totalSystems: number;
+} {
+  const results: RiskResult[] = [];
+  let complianceScore = 100;
+  
+  const hasEUExposure = data.hasEUCustomers || data.hasEUOperations || data.processesEUData;
+  
+  // Check for prohibited practices
+  const prohibitedCount = 0;
+  if (prohibitedCount > 0) {
+    results.push({
+      level: "prohibited",
+      count: prohibitedCount,
+      label: "Prohibited",
+      description: "Must stop immediately",
+      color: "text-error-600",
+      bgColor: "bg-error-50",
+      borderColor: "border-error-200",
+      icon: Danger,
+    });
+    complianceScore -= 30;
+  }
+
+  // Check for high-risk AI systems
+  const highRiskUseCases = ["hiring", "healthcare", "finance", "legal", "education", "critical-infra", "biometric-id"];
+  const highRiskCount = data.useCases.filter(uc => highRiskUseCases.includes(uc)).length;
+  const hasHighRiskData = data.dataTypes.some(dt => ["biometric", "health", "financial", "criminal", "children"].includes(dt));
+  const highRiskTotal = highRiskCount + (hasHighRiskData && (data.decisionImpact === "high" || data.decisionImpact === "critical") ? 1 : 0);
+  
+  if (highRiskTotal > 0) {
+    results.push({
+      level: "high",
+      count: highRiskTotal,
+      label: "High Risk",
+      description: "Requires conformity assessment",
+      color: "text-warning-600",
+      bgColor: "bg-warning-50",
+      borderColor: "border-warning-200",
+      icon: Warning2,
+    });
+    complianceScore -= highRiskTotal * 8;
+  }
+
+  // Check for limited-risk AI systems
+  const limitedRiskTypes = ["chatbot", "genai", "recommendation", "speech", "nlp"];
+  const limitedRiskCount = data.aiSystemTypes.filter(t => limitedRiskTypes.includes(t)).length;
+  
+  if (limitedRiskCount > 0) {
+    results.push({
+      level: "limited",
+      count: limitedRiskCount,
+      label: "Limited Risk",
+      description: "Transparency obligations",
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+      borderColor: "border-blue-200",
+      icon: InfoCircle,
+    });
+    complianceScore -= limitedRiskCount * 3;
+  }
+
+  // Minimal risk systems
+  const minimalRiskTypes = ["analytics", "automation", "fraud", "ml-model", "vision"];
+  const minimalRiskCount = data.aiSystemTypes.filter(t => minimalRiskTypes.includes(t)).length + 
+    data.useCases.filter(uc => ["internal", "research"].includes(uc)).length;
+  
+  if (minimalRiskCount > 0 || results.length === 0) {
+    results.push({
+      level: "minimal",
+      count: Math.max(minimalRiskCount, 1),
+      label: "Minimal Risk",
+      description: "Voluntary best practices",
+      color: "text-success-600",
+      bgColor: "bg-success-50",
+      borderColor: "border-success-200",
+      icon: TickCircle,
+    });
+  }
+
+  // Adjust score based on automation level
+  if ((data.automationLevel === "fully-automated" || data.automationLevel === "automated-override") && highRiskTotal > 0) {
+    complianceScore -= 10;
+  } else if (data.automationLevel === "human-in-loop" || data.automationLevel === "advisory-only") {
+    complianceScore += 5;
+  }
+
+  complianceScore = Math.max(0, Math.min(100, complianceScore));
+  const totalSystems = data.aiSystemTypes.length + data.useCases.length;
+
+  return { results, complianceScore, hasEUExposure, totalSystems };
+}
+
+// Animated counter hook
+function useAnimatedCounter(end: number, duration: number = 2000, delay: number = 0) {
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      let startTime: number;
+      const animate = (currentTime: number) => {
+        if (!startTime) startTime = currentTime;
+        const progress = Math.min((currentTime - startTime) / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        setCount(Math.floor(easeOut * end));
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+      requestAnimationFrame(animate);
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, [end, duration, delay]);
+  
+  return count;
+}
+
+// Animated progress ring - thicker stroke for better visibility
+function ProgressRing({ progress, size = 200, strokeWidth = 16, color }: { 
+  progress: number; 
+  size?: number; 
+  strokeWidth?: number;
+  color: string;
+}) {
+  const [animatedProgress, setAnimatedProgress] = useState(0);
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (animatedProgress / 100) * circumference;
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setAnimatedProgress(progress);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [progress]);
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg className="transform -rotate-90" width={size} height={size}>
+        <circle
+          className="text-gray-100"
+          strokeWidth={strokeWidth}
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+        <circle
+          className={cx("transition-all duration-[2000ms] ease-out", color)}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={cx("text-5xl font-bold", color.replace("-500", "-600"))}>
+          {useAnimatedCounter(progress, 2000, 500)}%
+        </span>
+        <span className="text-sm text-tertiary mt-1">Compliance Score</span>
+      </div>
+    </div>
+  );
+}
+
+// Loading animation component
+function AnalyzingAnimation({ onComplete }: { onComplete: () => void }) {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [progress, setProgress] = useState(0);
+  
+  const steps = [
+    { icon: Cpu, label: "Analyzing AI Systems", color: "text-brand-600" },
+    { icon: Shield, label: "Evaluating Risk Levels", color: "text-warning-600" },
+    { icon: DocumentText, label: "Checking Compliance Requirements", color: "text-blue-600" },
+    { icon: Chart, label: "Generating Your Report", color: "text-success-600" },
+  ];
+
+  useEffect(() => {
+    const stepDuration = 800;
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(progressInterval);
+          return 100;
+        }
+        return prev + 2;
+      });
+    }, 60);
+
+    const stepInterval = setInterval(() => {
+      setCurrentStep(prev => {
+        if (prev >= steps.length - 1) {
+          clearInterval(stepInterval);
+          setTimeout(onComplete, 500);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, stepDuration);
+
+    return () => {
+      clearInterval(progressInterval);
+      clearInterval(stepInterval);
+    };
+  }, [onComplete, steps.length]);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 py-16">
+      <div className="w-full max-w-md text-center">
+        {/* Animated icon */}
+        <div className="relative mx-auto mb-8 h-24 w-24">
+          <div className="absolute inset-0 animate-ping rounded-full bg-brand-200 opacity-20" />
+          <div className="absolute inset-2 animate-pulse rounded-full bg-brand-100" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <ShieldTick size={48} color="currentColor" className="text-brand-600 animate-pulse" variant="Bold" />
+          </div>
+        </div>
+
+        <h2 className="text-xl font-semibold text-primary mb-2">
+          Analyzing Your Assessment
+        </h2>
+        <p className="text-tertiary mb-8">
+          Please wait while we process your responses...
+        </p>
+
+        {/* Progress bar */}
+        <div className="mb-8">
+          <div className="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all duration-100 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="mt-2 text-sm text-tertiary">{progress}% complete</p>
+        </div>
+
+        {/* Steps */}
+        <div className="space-y-3">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = index === currentStep;
+            const isComplete = index < currentStep;
+            
+            return (
+              <div 
+                key={step.label}
+                className={cx(
+                  "flex items-center gap-3 rounded-xl p-3 transition-all duration-300",
+                  isActive && "bg-brand-50 scale-105",
+                  isComplete && "opacity-60",
+                  !isActive && !isComplete && "opacity-40"
+                )}
+              >
+                <div className={cx(
+                  "flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300",
+                  isActive && "bg-brand-100",
+                  isComplete && "bg-success-100",
+                  !isActive && !isComplete && "bg-gray-100"
+                )}>
+                  {isComplete ? (
+                    <TickCircle size={20} color="currentColor" className="text-success-600" variant="Bold" />
+                  ) : (
+                    <Icon size={20} color="currentColor" className={isActive ? step.color : "text-gray-400"} variant={isActive ? "Bold" : "Linear"} />
+                  )}
+                </div>
+                <span className={cx(
+                  "font-medium transition-all duration-300",
+                  isActive && "text-primary",
+                  isComplete && "text-success-600",
+                  !isActive && !isComplete && "text-tertiary"
+                )}>
+                  {step.label}
+                </span>
+                {isActive && (
+                  <div className="ml-auto flex gap-1">
+                    <div className="h-2 w-2 rounded-full bg-brand-600 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="h-2 w-2 rounded-full bg-brand-600 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="h-2 w-2 rounded-full bg-brand-600 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function AssessmentResultsPage() {
+  const router = useRouter();
+  const [data, setData] = useState<AssessmentData | null>(null);
+  const [results, setResults] = useState<RiskResult[]>([]);
+  const [complianceScore, setComplianceScore] = useState(0);
+  const [hasEUExposure, setHasEUExposure] = useState(false);
+  const [totalSystems, setTotalSystems] = useState(0);
+  const [isAnalyzing, setIsAnalyzing] = useState(true);
+  const [showContent, setShowContent] = useState(false);
+
+  useEffect(() => {
+    const savedData = localStorage.getItem("assessmentData");
+    if (savedData) {
+      const parsedData = JSON.parse(savedData) as AssessmentData;
+      setData(parsedData);
+      const calculated = calculateRiskResults(parsedData);
+      setResults(calculated.results);
+      setComplianceScore(calculated.complianceScore);
+      setHasEUExposure(calculated.hasEUExposure);
+      setTotalSystems(calculated.totalSystems);
+    } else {
+      setIsAnalyzing(false);
+    }
+  }, []);
+
+  const handleAnalysisComplete = useCallback(() => {
+    setIsAnalyzing(false);
+    setTimeout(() => setShowContent(true), 100);
+  }, []);
+
+  const handleCreateAccount = () => {
+    router.push("/dashboard");
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 70) return "text-success-500";
+    if (score >= 40) return "text-warning-500";
+    return "text-error-500";
+  };
+
+  const getScoreLabel = (score: number) => {
+    if (score >= 80) return { label: "Excellent", color: "text-success-600", bg: "bg-success-50" };
+    if (score >= 60) return { label: "Good", color: "text-success-600", bg: "bg-success-50" };
+    if (score >= 40) return { label: "Needs Work", color: "text-warning-600", bg: "bg-warning-50" };
+    return { label: "Critical", color: "text-error-600", bg: "bg-error-50" };
+  };
+
+  if (!data) {
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center">
+        <div className="text-center">
+          <ShieldTick size={48} className="mx-auto text-gray-300 mb-4" variant="Bold" />
+          <p className="text-tertiary">No assessment data found.</p>
+          <Button color="primary" className="mt-4" onClick={() => router.push("/assessment")}>
+            Start Assessment
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAnalyzing) {
+    return <AnalyzingAnimation onComplete={handleAnalysisComplete} />;
+  }
+
+  const scoreInfo = getScoreLabel(complianceScore);
+
+  return (
+    <div className={cx(
+      "min-h-0 flex-1 overflow-y-auto transition-all duration-500",
+      showContent ? "opacity-100" : "opacity-0"
+    )}>
+      <div className="mx-auto max-w-4xl px-6 py-10">
+        {/* Hero Section */}
+        <div className="mb-12 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 mb-6">
+            <TickCircle size={16} className="text-brand-600" variant="Bold" />
+            <span className="text-sm font-medium text-brand-700">Assessment Complete</span>
+          </div>
+          
+          <h1 className="text-display-md font-bold text-primary mb-3">
+            Your Compliance Report
+          </h1>
+          <p className="text-lg text-tertiary max-w-2xl mx-auto">
+            Based on your assessment, here's a personalized compliance roadmap for{" "}
+            <span className="font-semibold text-primary">{data.companyName || "your organization"}</span>
+          </p>
+        </div>
+
+        {/* Score Card */}
+        <div className="mb-10 rounded-2xl border border-secondary bg-gradient-to-br from-white to-gray-50 p-8 shadow-lg">
+          <div className="flex flex-col items-center gap-8 md:flex-row md:justify-between">
+            {/* Progress Ring */}
+            <div className="flex flex-col items-center">
+              <ProgressRing 
+                progress={complianceScore} 
+                color={getScoreColor(complianceScore)}
+              />
+              <div className={cx("mt-4 rounded-full px-4 py-1.5", scoreInfo.bg)}>
+                <span className={cx("text-sm font-semibold", scoreInfo.color)}>
+                  {scoreInfo.label}
+                </span>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-4 flex-1 max-w-sm">
+              <div className="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100 mb-3">
+                  <Cpu size={20} color="currentColor" className="text-brand-600" variant="Bold" />
+                </div>
+                <p className="text-2xl font-bold text-primary">{totalSystems}</p>
+                <p className="text-sm text-tertiary">AI Systems</p>
+              </div>
+              
+              <div className="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning-100 mb-3">
+                  <Warning2 size={20} color="currentColor" className="text-warning-600" variant="Bold" />
+                </div>
+                <p className="text-2xl font-bold text-primary">
+                  {results.find(r => r.level === "high")?.count || 0}
+                </p>
+                <p className="text-sm text-tertiary">High Risk</p>
+              </div>
+              
+              <div className="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 mb-3">
+                  <InfoCircle size={20} color="currentColor" className="text-blue-600" variant="Bold" />
+                </div>
+                <p className="text-2xl font-bold text-primary">
+                  {results.find(r => r.level === "limited")?.count || 0}
+                </p>
+                <p className="text-sm text-tertiary">Limited Risk</p>
+              </div>
+              
+              <div className="rounded-xl bg-white p-4 shadow-sm border border-gray-100">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success-100 mb-3">
+                  <TickCircle size={20} color="currentColor" className="text-success-600" variant="Bold" />
+                </div>
+                <p className="text-2xl font-bold text-primary">
+                  {results.find(r => r.level === "minimal")?.count || 0}
+                </p>
+                <p className="text-sm text-tertiary">Minimal Risk</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* EU Exposure Alert */}
+        {hasEUExposure && (
+          <div className="mb-8 rounded-xl border-2 border-warning-300 bg-gradient-to-r from-warning-50 to-warning-100 p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-warning-200">
+                <Shield size={24} color="currentColor" className="text-warning-700" variant="Bold" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-warning-900">
+                  EU AI Act Applies to Your Organization
+                </h3>
+                <p className="mt-1 text-warning-800">
+                  Based on your EU presence (customers, operations, or data processing), you are subject to EU AI Act compliance requirements. Non-compliance can result in fines up to €35 million or 7% of global annual turnover.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Risk Classification */}
+        <div className="mb-10">
+          <h2 className="text-xl font-semibold text-primary mb-6 flex items-center gap-2">
+            <Chart size={24} color="currentColor" className="text-brand-600" variant="Bold" />
+            Risk Classification Summary
+          </h2>
+          
+          <div className="grid gap-4 sm:grid-cols-2">
+            {results.map((result, index) => {
+              const Icon = result.icon;
+              return (
+                <div
+                  key={result.level}
+                  className={cx(
+                    "rounded-xl border-2 p-5 transition-all duration-300 hover:shadow-md",
+                    result.borderColor,
+                    result.bgColor
+                  )}
+                  style={{ 
+                    animationDelay: `${index * 150}ms`,
+                    animation: showContent ? "fadeInUp 0.5s ease-out forwards" : "none"
+                  }}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={cx(
+                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+                      result.level === "prohibited" && "bg-error-200",
+                      result.level === "high" && "bg-warning-200",
+                      result.level === "limited" && "bg-blue-200",
+                      result.level === "minimal" && "bg-success-200"
+                    )}>
+                      <Icon size={24} color="currentColor" className={result.color} variant="Bold" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className={cx("font-semibold text-lg", result.color)}>
+                          {result.label}
+                        </h3>
+                        <span className={cx(
+                          "flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold",
+                          result.level === "prohibited" && "bg-error-200 text-error-700",
+                          result.level === "high" && "bg-warning-200 text-warning-700",
+                          result.level === "limited" && "bg-blue-200 text-blue-700",
+                          result.level === "minimal" && "bg-success-200 text-success-700"
+                        )}>
+                          {result.count}
+                        </span>
+                      </div>
+                      <p className="text-sm text-tertiary">{result.description}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Key Deadlines - Using Progress Stepper */}
+        <div className="mb-10">
+          <h2 className="text-xl font-semibold text-primary mb-6 flex items-center gap-2">
+            <Calendar className="h-6 w-6 text-brand-600" />
+            Key Compliance Deadlines
+          </h2>
+          
+          <div className="rounded-xl border border-secondary bg-white p-6">
+            <Progress.IconsWithText 
+              type="featured-icon"
+              orientation="vertical"
+              size="md"
+              items={[
+                { 
+                  title: "August 2, 2025", 
+                  description: "Prohibited AI practices must stop", 
+                  status: "complete" as const,
+                  icon: AlertCircle,
+                },
+                { 
+                  title: "August 2, 2026", 
+                  description: "High-risk AI systems must be compliant", 
+                  status: "current" as const,
+                  icon: Flag05,
+                },
+                { 
+                  title: "August 2, 2027", 
+                  description: "All AI systems must be fully compliant", 
+                  status: "incomplete" as const,
+                  icon: CheckCircle,
+                },
+              ] as ProgressFeaturedIconType[]}
+            />
+          </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 p-8 text-white shadow-xl">
+          <div className="flex flex-col items-center gap-6 lg:flex-row lg:justify-between">
+            <div className="text-center lg:text-left flex-1">
+              <h2 className="text-2xl font-bold mb-2">
+                Ready to Achieve Compliance?
+              </h2>
+              <p className="text-brand-100">
+                Create your free account to track your AI systems, generate required documentation, and monitor your compliance progress in real-time.
+              </p>
+            </div>
+            <div className="flex flex-row gap-3 shrink-0">
+              <button
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/30 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/20"
+                onClick={() => {}}
+              >
+                <DocumentDownload size={18} color="currentColor" className="text-white" variant="Bold" />
+                <span>Download Report</span>
+              </button>
+              <button
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50"
+                onClick={handleCreateAccount}
+              >
+                <span>Get Started Free</span>
+                <ArrowRight size={18} color="currentColor" className="text-brand-700" variant="Bold" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer note */}
+        <p className="mt-8 text-center text-sm text-tertiary">
+          <Clock size={14} color="currentColor" className="inline mr-1" />
+          This assessment is based on the information you provided and serves as a preliminary guide. 
+          For comprehensive compliance, we recommend a detailed review with our platform.
+        </p>
+      </div>
+
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+    </div>
+  );
+}

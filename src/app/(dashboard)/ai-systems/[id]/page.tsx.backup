@@ -1,0 +1,901 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import {
+  Cpu,
+  Warning2,
+  TickCircle,
+  DocumentText,
+  Folder,
+  Activity,
+  Clock,
+  Calendar,
+  Edit2,
+  Trash,
+  Add,
+  ArrowRight,
+  InfoCircle,
+  ShieldTick,
+  Chart,
+  People,
+} from "iconsax-react";
+import { ArrowLeft, Upload01, File06, Check, AlertCircle, DotsVertical, UploadCloud02, Download01 } from "@untitledui/icons";
+import { FileIcon } from "@untitledui/file-icons";
+import { FeedItem, type FeedItemType } from "@/components/application/activity-feed/activity-feed";
+import * as Paginations from "@/components/application/pagination/pagination";
+import { ConfirmationModal } from "@/components/application/modals/confirmation-modal";
+import { UploadModal } from "@/components/application/modals/upload-modal";
+import { Button } from "@/components/base/buttons/button";
+import { Badge, BadgeWithDot } from "@/components/base/badges/badges";
+import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
+import { Tabs, TabList, TabPanel, Tab } from "@/components/application/tabs/tabs";
+import { Table, TableCard, TableRowActionsDropdown } from "@/components/application/table/table";
+import { Avatar } from "@/components/base/avatar/avatar";
+import { Checkbox } from "@/components/base/checkbox/checkbox";
+import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
+import { Dropdown } from "@/components/base/dropdown/dropdown";
+import { cx } from "@/utils/cx";
+
+// Mock AI System data
+const mockAISystems: Record<string, {
+  id: string;
+  name: string;
+  description: string;
+  riskLevel: "high" | "limited" | "minimal";
+  status: "compliant" | "in_progress" | "not_started";
+  progress: number;
+  provider: string;
+  modelName: string;
+  category: string;
+  deploymentStatus: string;
+  createdAt: string;
+  updatedAt: string;
+  requirements: {
+    completed: number;
+    total: number;
+    sections: {
+      id: string;
+      title: string;
+      article: string;
+      items: {
+        id: string;
+        title: string;
+        status: "complete" | "in_progress" | "not_started";
+        evidence?: string;
+        document?: string;
+      }[];
+    }[];
+  };
+  documents: {
+    id: string;
+    name: string;
+    type: string;
+    status: "generated" | "draft" | "pending";
+    createdAt: string;
+    size: string;
+  }[];
+  evidence: {
+    id: string;
+    name: string;
+    type: string;
+    uploadedAt: string;
+    uploadedBy: string;
+    linkedTo: string;
+    size: string;
+  }[];
+  activity: {
+    id: string;
+    user: string;
+    avatarUrl: string;
+    action: string;
+    target: string;
+    time: string;
+  }[];
+}> = {
+  "system-01": {
+    id: "system-01",
+    name: "Customer Support Chatbot",
+    description: "AI-powered chatbot for handling customer inquiries and support tickets. Uses GPT-4 for natural language understanding.",
+    riskLevel: "limited",
+    status: "compliant",
+    progress: 100,
+    provider: "OpenAI",
+    modelName: "GPT-4",
+    category: "Customer Service / Chatbots",
+    deploymentStatus: "Production",
+    createdAt: "2024-01-15",
+    updatedAt: "2024-12-10",
+    requirements: {
+      completed: 8,
+      total: 8,
+      sections: [
+        {
+          id: "sec-1",
+          title: "Transparency Requirements",
+          article: "Article 52",
+          items: [
+            { id: "req-1", title: "Disclose AI interaction to users", status: "complete", evidence: "transparency_notice.pdf" },
+            { id: "req-2", title: "Provide clear AI identification", status: "complete", document: "User Disclosure Policy" },
+          ],
+        },
+      ],
+    },
+    documents: [
+      { id: "doc-1", name: "Transparency Notice", type: "PDF", status: "generated", createdAt: "2024-12-01", size: "245 KB" },
+      { id: "doc-2", name: "User Instructions", type: "PDF", status: "generated", createdAt: "2024-11-28", size: "180 KB" },
+    ],
+    evidence: [
+      { id: "ev-1", name: "transparency_notice.pdf", type: "PDF", uploadedAt: "2024-12-01", uploadedBy: "Sarah Chen", linkedTo: "Transparency Requirements", size: "245 KB" },
+    ],
+    activity: [
+      { id: "act-1", user: "Sarah Chen", avatarUrl: "https://www.untitledui.com/images/avatars/lana-steiner?fm=webp&q=80", action: "marked requirement complete", target: "Disclose AI interaction", time: "2 hours ago" },
+      { id: "act-2", user: "John Miller", avatarUrl: "https://www.untitledui.com/images/avatars/demi-wilkinson?fm=webp&q=80", action: "uploaded evidence", target: "transparency_notice.pdf", time: "1 day ago" },
+    ],
+  },
+  "system-02": {
+    id: "system-02",
+    name: "Automated Hiring Screener",
+    description: "ML model for screening job applications and ranking candidates based on qualifications and experience.",
+    riskLevel: "high",
+    status: "in_progress",
+    progress: 50,
+    provider: "Custom / In-house",
+    modelName: "Custom ML Model",
+    category: "Hiring / Recruitment",
+    deploymentStatus: "Production",
+    createdAt: "2024-02-20",
+    updatedAt: "2024-12-12",
+    requirements: {
+      completed: 12,
+      total: 24,
+      sections: [
+        {
+          id: "sec-1",
+          title: "Risk Management System",
+          article: "Article 9",
+          items: [
+            { id: "req-1", title: "Establish risk management system", status: "complete", evidence: "risk_management_policy.pdf" },
+            { id: "req-2", title: "Identify and analyze known and foreseeable risks", status: "complete", document: "Risk Assessment Report" },
+            { id: "req-3", title: "Implement risk mitigation measures", status: "in_progress" },
+            { id: "req-4", title: "Conduct testing for risk management", status: "not_started" },
+          ],
+        },
+        {
+          id: "sec-2",
+          title: "Data Governance",
+          article: "Article 10",
+          items: [
+            { id: "req-5", title: "Implement data governance practices", status: "not_started" },
+            { id: "req-6", title: "Document training data characteristics", status: "not_started" },
+            { id: "req-7", title: "Ensure data quality for training sets", status: "not_started" },
+            { id: "req-8", title: "Address bias in training data", status: "not_started" },
+          ],
+        },
+        {
+          id: "sec-3",
+          title: "Technical Documentation",
+          article: "Article 11",
+          items: [
+            { id: "req-9", title: "Create comprehensive technical documentation", status: "in_progress" },
+            { id: "req-10", title: "Document system architecture", status: "complete" },
+            { id: "req-11", title: "Document training methodology", status: "not_started" },
+          ],
+        },
+        {
+          id: "sec-4",
+          title: "Human Oversight",
+          article: "Article 14",
+          items: [
+            { id: "req-12", title: "Enable human oversight mechanisms", status: "complete" },
+            { id: "req-13", title: "Document human review procedures", status: "in_progress" },
+          ],
+        },
+      ],
+    },
+    documents: [
+      { id: "doc-1", name: "Risk Assessment Report", type: "PDF", status: "generated", createdAt: "2024-12-05", size: "1.2 MB" },
+      { id: "doc-2", name: "Technical Documentation", type: "PDF", status: "draft", createdAt: "2024-12-10", size: "890 KB" },
+      { id: "doc-3", name: "System Architecture", type: "PDF", status: "generated", createdAt: "2024-11-20", size: "2.1 MB" },
+      { id: "doc-4", name: "Data Governance Policy", type: "PDF", status: "generated", createdAt: "2024-11-15", size: "520 KB" },
+      { id: "doc-5", name: "Bias Mitigation Report", type: "PDF", status: "draft", createdAt: "2024-11-10", size: "1.5 MB" },
+      { id: "doc-6", name: "Model Card", type: "PDF", status: "generated", createdAt: "2024-10-28", size: "340 KB" },
+      { id: "doc-7", name: "Training Data Summary", type: "PDF", status: "pending", createdAt: "2024-10-20", size: "2.8 MB" },
+      { id: "doc-8", name: "Human Oversight Procedures", type: "PDF", status: "generated", createdAt: "2024-10-15", size: "410 KB" },
+      { id: "doc-9", name: "Conformity Assessment", type: "PDF", status: "draft", createdAt: "2024-10-10", size: "1.1 MB" },
+      { id: "doc-10", name: "EU Declaration of Conformity", type: "PDF", status: "pending", createdAt: "2024-10-05", size: "280 KB" },
+      { id: "doc-11", name: "Incident Response Plan", type: "PDF", status: "generated", createdAt: "2024-09-28", size: "650 KB" },
+      { id: "doc-12", name: "Post-Market Monitoring Plan", type: "PDF", status: "draft", createdAt: "2024-09-20", size: "720 KB" },
+    ],
+    evidence: [
+      { id: "ev-1", name: "risk_management_policy.pdf", type: "PDF", uploadedAt: "2024-12-01", uploadedBy: "David Park", linkedTo: "Risk Management System", size: "450 KB" },
+      { id: "ev-2", name: "bias_audit_report.pdf", type: "PDF", uploadedAt: "2024-11-28", uploadedBy: "Sarah Chen", linkedTo: "Data Governance", size: "780 KB" },
+      { id: "ev-3", name: "human_review_logs.csv", type: "CSV", uploadedAt: "2024-12-08", uploadedBy: "John Miller", linkedTo: "Human Oversight", size: "125 KB" },
+      { id: "ev-4", name: "training_data_manifest.xlsx", type: "XLSX", uploadedAt: "2024-11-25", uploadedBy: "Olivia Rhye", linkedTo: "Data Governance", size: "2.3 MB" },
+      { id: "ev-5", name: "model_validation_results.pdf", type: "PDF", uploadedAt: "2024-11-20", uploadedBy: "David Park", linkedTo: "Technical Documentation", size: "1.8 MB" },
+      { id: "ev-6", name: "fairness_metrics.json", type: "JSON", uploadedAt: "2024-11-18", uploadedBy: "Sarah Chen", linkedTo: "Data Governance", size: "45 KB" },
+      { id: "ev-7", name: "system_architecture_diagram.png", type: "PNG", uploadedAt: "2024-11-15", uploadedBy: "John Miller", linkedTo: "Technical Documentation", size: "3.2 MB" },
+      { id: "ev-8", name: "oversight_committee_minutes.pdf", type: "PDF", uploadedAt: "2024-11-10", uploadedBy: "Olivia Rhye", linkedTo: "Human Oversight", size: "320 KB" },
+      { id: "ev-9", name: "data_quality_assessment.pdf", type: "PDF", uploadedAt: "2024-11-05", uploadedBy: "David Park", linkedTo: "Data Governance", size: "890 KB" },
+      { id: "ev-10", name: "incident_log_q4.csv", type: "CSV", uploadedAt: "2024-10-30", uploadedBy: "Sarah Chen", linkedTo: "Risk Management System", size: "156 KB" },
+      { id: "ev-11", name: "user_feedback_analysis.pdf", type: "PDF", uploadedAt: "2024-10-25", uploadedBy: "John Miller", linkedTo: "Human Oversight", size: "540 KB" },
+      { id: "ev-12", name: "compliance_checklist_signed.pdf", type: "PDF", uploadedAt: "2024-10-20", uploadedBy: "Olivia Rhye", linkedTo: "Risk Management System", size: "180 KB" },
+    ],
+    activity: [
+      { id: "act-1", user: "David Park", avatarUrl: "https://www.untitledui.com/images/avatars/phoenix-baker?fm=webp&q=80", action: "started working on", target: "Technical Documentation", time: "3 hours ago" },
+      { id: "act-2", user: "Sarah Chen", avatarUrl: "https://www.untitledui.com/images/avatars/lana-steiner?fm=webp&q=80", action: "uploaded evidence", target: "bias_audit_report.pdf", time: "2 days ago" },
+      { id: "act-3", user: "John Miller", avatarUrl: "https://www.untitledui.com/images/avatars/demi-wilkinson?fm=webp&q=80", action: "marked requirement complete", target: "Enable human oversight", time: "4 days ago" },
+      { id: "act-4", user: "Olivia Rhye", avatarUrl: "https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80", action: "generated document", target: "Risk Assessment Report", time: "1 week ago" },
+      { id: "act-5", user: "David Park", avatarUrl: "https://www.untitledui.com/images/avatars/phoenix-baker?fm=webp&q=80", action: "uploaded evidence", target: "model_validation_results.pdf", time: "1 week ago" },
+      { id: "act-6", user: "Sarah Chen", avatarUrl: "https://www.untitledui.com/images/avatars/lana-steiner?fm=webp&q=80", action: "marked requirement complete", target: "Document system architecture", time: "2 weeks ago" },
+      { id: "act-7", user: "John Miller", avatarUrl: "https://www.untitledui.com/images/avatars/demi-wilkinson?fm=webp&q=80", action: "generated document", target: "Human Oversight Procedures", time: "2 weeks ago" },
+      { id: "act-8", user: "Olivia Rhye", avatarUrl: "https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80", action: "uploaded evidence", target: "training_data_manifest.xlsx", time: "3 weeks ago" },
+      { id: "act-9", user: "David Park", avatarUrl: "https://www.untitledui.com/images/avatars/phoenix-baker?fm=webp&q=80", action: "started working on", target: "Data Governance Policy", time: "3 weeks ago" },
+      { id: "act-10", user: "Sarah Chen", avatarUrl: "https://www.untitledui.com/images/avatars/lana-steiner?fm=webp&q=80", action: "generated document", target: "Model Card", time: "1 month ago" },
+      { id: "act-11", user: "John Miller", avatarUrl: "https://www.untitledui.com/images/avatars/demi-wilkinson?fm=webp&q=80", action: "uploaded evidence", target: "system_architecture_diagram.png", time: "1 month ago" },
+      { id: "act-12", user: "Olivia Rhye", avatarUrl: "https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80", action: "marked requirement complete", target: "Establish risk management system", time: "1 month ago" },
+    ],
+  },
+};
+
+// Risk level config
+const riskLevelConfig = {
+  high: { label: "High Risk", color: "warning" as const, icon: Warning2 },
+  limited: { label: "Limited Risk", color: "blue" as const, icon: InfoCircle },
+  minimal: { label: "Minimal Risk", color: "success" as const, icon: TickCircle },
+};
+
+// Status config
+const statusConfig = {
+  compliant: { label: "Compliant", color: "success" as const },
+  in_progress: { label: "In Progress", color: "warning" as const },
+  not_started: { label: "Not Started", color: "gray" as const },
+};
+
+// Requirement status config
+const reqStatusConfig = {
+  complete: { label: "Complete", color: "success" as const, icon: Check },
+  in_progress: { label: "In Progress", color: "warning" as const, icon: Clock },
+  not_started: { label: "Not Started", color: "gray" as const, icon: Clock },
+};
+
+const ITEMS_PER_PAGE = 8;
+
+export default function AISystemDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = params.id as string;
+  const [activeTab, setActiveTab] = useState("overview");
+  const [requirementFilter, setRequirementFilter] = useState<"all" | "pending" | "complete">("all");
+  const [documentsPage, setDocumentsPage] = useState(1);
+  const [evidencePage, setEvidencePage] = useState(1);
+  const [activityPage, setActivityPage] = useState(1);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isUploadEvidenceModalOpen, setIsUploadEvidenceModalOpen] = useState(false);
+  const [isGenerateDocModalOpen, setIsGenerateDocModalOpen] = useState(false);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  // Get system data (in real app, this would be fetched)
+  const system = mockAISystems[id] || mockAISystems["system-02"];
+
+  // Paginated data
+  const paginatedDocuments = system.documents.slice(
+    (documentsPage - 1) * ITEMS_PER_PAGE,
+    documentsPage * ITEMS_PER_PAGE
+  );
+  const paginatedEvidence = system.evidence.slice(
+    (evidencePage - 1) * ITEMS_PER_PAGE,
+    evidencePage * ITEMS_PER_PAGE
+  );
+  const paginatedActivity = system.activity.slice(
+    (activityPage - 1) * ITEMS_PER_PAGE,
+    activityPage * ITEMS_PER_PAGE
+  );
+
+  // Filter requirements based on filter
+  const getFilteredRequirements = () => {
+    return system.requirements.sections.map(section => ({
+      ...section,
+      items: section.items.filter(item => {
+        if (requirementFilter === "all") return true;
+        if (requirementFilter === "complete") return item.status === "complete";
+        if (requirementFilter === "pending") return item.status !== "complete";
+        return true;
+      }),
+    })).filter(section => section.items.length > 0);
+  };
+
+  const tabs = [
+    { id: "overview", label: "Overview" },
+    { id: "requirements", label: "Requirements", badge: `${system.requirements.completed}/${system.requirements.total}` },
+    { id: "documents", label: "Documents", badge: system.documents.length },
+    { id: "evidence", label: "Evidence", badge: system.evidence.length },
+    { id: "activity", label: "Activity" },
+  ];
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* Fixed Header */}
+      <div className="shrink-0 border-b border-secondary bg-primary px-6 py-4 lg:px-8">
+        {/* Back link */}
+        <Link
+          href="/ai-systems"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-tertiary hover:text-secondary"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to AI Systems
+        </Link>
+
+        {/* System header */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-100">
+              <Cpu size={24} className="text-brand-600" color="currentColor" variant="Bold" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-semibold text-primary lg:text-2xl">{system.name}</h1>
+                <BadgeWithDot size="md" type="modern" color={riskLevelConfig[system.riskLevel].color}>
+                  {riskLevelConfig[system.riskLevel].label}
+                </BadgeWithDot>
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tertiary">
+                <span>{system.category}</span>
+                <span>•</span>
+                <span>Provider: {system.provider}</span>
+                <span>•</span>
+                <span>Model: {system.modelName}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <BadgeWithDot size="md" type="modern" color={statusConfig[system.status].color}>
+                {statusConfig[system.status].label}
+              </BadgeWithDot>
+              <span className="text-sm font-medium text-secondary">{system.progress}%</span>
+            </div>
+            <Button size="sm" color="secondary" iconLeading={({ className }) => <Edit2 size={16} color="currentColor" className={className} />} onClick={() => router.push(`/ai-systems/${id}/edit`)}>
+              Edit
+            </Button>
+            <Dropdown.Root>
+              <Button size="sm" color="secondary">
+                <DotsVertical className="h-4 w-4" />
+              </Button>
+              <Dropdown.Popover>
+                <Dropdown.Menu>
+                  <Dropdown.Item label="Duplicate System" onAction={() => setIsDuplicateModalOpen(true)} />
+                  <Dropdown.Item label="Export Data" onAction={() => setIsExportModalOpen(true)} />
+                  <Dropdown.Separator />
+                  <Dropdown.Item label="Delete System" onAction={() => setIsDeleteModalOpen(true)} />
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown.Root>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="shrink-0 border-b border-secondary bg-primary px-6 pt-4 lg:px-8">
+        <Tabs selectedKey={activeTab} onSelectionChange={(key) => setActiveTab(key as string)}>
+          <TabList type="underline" size="sm" items={tabs}>
+            {(item) => (
+              <Tab key={item.id} id={item.id} label={item.label} badge={item.badge} />
+            )}
+          </TabList>
+        </Tabs>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
+        {/* Overview Tab */}
+        {activeTab === "overview" && (
+          <div className="flex flex-col gap-6">
+            {/* Progress Card */}
+            <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary ring-inset">
+              <h3 className="text-lg font-semibold text-primary">Compliance Progress</h3>
+              <div className="mt-4 flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-tertiary">Overall Progress</span>
+                    <span className="font-medium text-primary">{system.progress}%</span>
+                  </div>
+                  <ProgressBarBase value={system.progress} className="mt-2 h-3" />
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-semibold text-primary">{system.requirements.completed}/{system.requirements.total}</p>
+                  <p className="text-sm text-tertiary">Requirements Complete</p>
+                </div>
+              </div>
+              {system.riskLevel === "high" && (
+                <div className="mt-4 flex items-center gap-2 rounded-lg bg-warning-50 px-3 py-2">
+                  <AlertCircle className="h-5 w-5 text-warning-600" />
+                  <span className="text-sm font-medium text-warning-700">
+                    Deadline: Aug 2, 2026 — Full compliance required for high-risk AI
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100">
+                  <DocumentText size={20} className="text-brand-600" color="currentColor" variant="Bold" />
+                </div>
+                <p className="mt-3 text-2xl font-semibold text-primary">{system.documents.length}</p>
+                <p className="text-sm text-tertiary">Documents</p>
+              </div>
+              <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+                  <Folder size={20} className="text-purple-600" color="currentColor" variant="Bold" />
+                </div>
+                <p className="mt-3 text-2xl font-semibold text-primary">{system.evidence.length}</p>
+                <p className="text-sm text-tertiary">Evidence Files</p>
+              </div>
+              <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success-100">
+                  <TickCircle size={20} className="text-success-600" color="currentColor" variant="Bold" />
+                </div>
+                <p className="mt-3 text-2xl font-semibold text-primary">{system.requirements.completed}</p>
+                <p className="text-sm text-tertiary">Completed</p>
+              </div>
+              <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning-100">
+                  <Clock size={20} className="text-warning-600" color="currentColor" variant="Bold" />
+                </div>
+                <p className="mt-3 text-2xl font-semibold text-primary">{system.requirements.total - system.requirements.completed}</p>
+                <p className="text-sm text-tertiary">Pending</p>
+              </div>
+            </div>
+
+            {/* System Details */}
+            <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary ring-inset">
+              <h3 className="text-lg font-semibold text-primary">System Details</h3>
+              <p className="mt-2 text-sm text-tertiary">{system.description}</p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <p className="text-xs text-tertiary">Provider</p>
+                  <p className="mt-1 text-sm font-medium text-primary">{system.provider}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-tertiary">Model</p>
+                  <p className="mt-1 text-sm font-medium text-primary">{system.modelName}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-tertiary">Deployment Status</p>
+                  <p className="mt-1 text-sm font-medium text-primary">{system.deploymentStatus}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-tertiary">Last Updated</p>
+                  <p className="mt-1 text-sm font-medium text-primary">{system.updatedAt}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary ring-inset">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-primary">Recent Activity</h3>
+                <button
+                  onClick={() => setActiveTab("activity")}
+                  className="text-sm font-medium text-brand-600 hover:text-brand-700"
+                >
+                  View all
+                </button>
+              </div>
+              <ul className="flex flex-col gap-4 divide-y divide-border-secondary">
+                {system.activity.slice(0, 3).map((item, index) => {
+                  const feedItem: FeedItemType = {
+                    id: item.id,
+                    date: item.time,
+                    user: {
+                      avatarUrl: "",
+                      name: item.user,
+                      href: "#",
+                    },
+                    action: {
+                      content: item.action,
+                      target: item.target,
+                      href: "#",
+                    },
+                  };
+                  return (
+                    <li key={item.id} className="pt-4 first:pt-0">
+                      <FeedItem {...feedItem} connector={false} size="sm" />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Requirements Tab */}
+        {activeTab === "requirements" && (
+          <div className="flex flex-col gap-6">
+            {/* Filter and Progress Header */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-2">
+                {(["all", "pending", "complete"] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setRequirementFilter(filter)}
+                    className={cx(
+                      "rounded-lg px-3 py-1.5 text-sm font-medium transition",
+                      requirementFilter === filter
+                        ? "bg-brand-50 text-brand-700"
+                        : "text-tertiary hover:bg-secondary"
+                    )}
+                  >
+                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-tertiary">Progress:</span>
+                <div className="flex items-center gap-2">
+                  <ProgressBarBase value={system.progress} className="w-24" />
+                  <span className="text-sm font-medium text-primary">
+                    {system.requirements.completed}/{system.requirements.total}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Requirements Sections as Tables */}
+            {getFilteredRequirements().map((section) => (
+              <TableCard.Root key={section.id}>
+                <TableCard.Header
+                  title={section.title}
+                  description={section.article}
+                  contentTrailing={
+                    <div className="absolute top-5 right-4 md:right-6">
+                      <Badge color="gray" size="md">
+                        {section.items.filter(i => i.status === "complete").length}/{section.items.length} Complete
+                      </Badge>
+                    </div>
+                  }
+                />
+                <Table aria-label={section.title} selectionMode="none">
+                  <Table.Header>
+                    <Table.Head id="requirement" isRowHeader label="Requirement" />
+                    <Table.Head id="status" label="Status" />
+                    <Table.Head id="evidence" label="Evidence/Document" />
+                    <Table.Head id="actions" />
+                  </Table.Header>
+                  <Table.Body items={section.items}>
+                    {(item) => (
+                      <Table.Row id={item.id}>
+                        <Table.Cell>
+                          <div className="flex items-center gap-3">
+                            <div className={cx(
+                              "flex h-6 w-6 shrink-0 items-center justify-center rounded",
+                              item.status === "complete" ? "bg-success-100" : "bg-gray-100"
+                            )}>
+                              {item.status === "complete" ? (
+                                <Check className="h-3.5 w-3.5 text-success-600" />
+                              ) : (
+                                <div className="h-2 w-2 rounded-full bg-gray-300" />
+                              )}
+                            </div>
+                            <span className={cx(
+                              "text-sm font-medium whitespace-nowrap",
+                              item.status === "complete" ? "text-tertiary" : "text-primary"
+                            )}>
+                              {item.title}
+                            </span>
+                          </div>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <BadgeWithDot size="sm" color={reqStatusConfig[item.status].color}>
+                            {reqStatusConfig[item.status].label}
+                          </BadgeWithDot>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {item.evidence && (
+                            <span className="text-sm text-secondary whitespace-nowrap">{item.evidence}</span>
+                          )}
+                          {item.document && (
+                            <span className="text-sm text-secondary whitespace-nowrap">{item.document}</span>
+                          )}
+                          {!item.evidence && !item.document && (
+                            <span className="text-sm text-tertiary">—</span>
+                          )}
+                        </Table.Cell>
+                        <Table.Cell className="px-4">
+                          {item.status !== "complete" && (
+                            <div className="flex items-center justify-end gap-2">
+                              <Button size="sm" color="secondary" onClick={() => setIsUploadEvidenceModalOpen(true)}>
+                                <Upload01 className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" color="secondary" onClick={() => setIsGenerateDocModalOpen(true)}>
+                                <Add size={16} color="currentColor" />
+                              </Button>
+                            </div>
+                          )}
+                          {item.status === "complete" && (
+                            <div className="flex items-center justify-end">
+                              <TableRowActionsDropdown />
+                            </div>
+                          )}
+                        </Table.Cell>
+                      </Table.Row>
+                    )}
+                  </Table.Body>
+                </Table>
+              </TableCard.Root>
+            ))}
+          </div>
+        )}
+
+        {/* Documents Tab */}
+        {activeTab === "documents" && (
+          <>
+          <TableCard.Root>
+            <TableCard.Header
+              title="Documents"
+              badge={`${system.documents.length} files`}
+              contentTrailing={
+                <div className="flex items-center gap-3">
+                  <Button size="md" color="secondary" iconLeading={Download01} onClick={() => {
+                    console.log("Downloading all documents...");
+                    alert("Download started for all documents");
+                  }}>
+                    Download all
+                  </Button>
+                  <Button size="md" iconLeading={UploadCloud02} onClick={() => setIsGenerateDocModalOpen(true)}>
+                    Generate
+                  </Button>
+                </div>
+              }
+            />
+            <Table aria-label="Documents" selectionMode="multiple">
+              <Table.Header className="bg-primary">
+                <Table.Head id="name" isRowHeader label="File name" />
+                <Table.Head id="size" label="File size" />
+                <Table.Head id="status" label="Status" />
+                <Table.Head id="createdAt" label="Date created" />
+                <Table.Head id="updatedAt" label="Last updated" className="md:hidden xl:table-cell" />
+                <Table.Head id="actions" />
+              </Table.Header>
+              <Table.Body items={paginatedDocuments}>
+                {(doc) => (
+                  <Table.Row id={doc.id} className="odd:bg-secondary_subtle">
+                    <Table.Cell>
+                      <div className="flex items-center gap-3">
+                        <FileIcon type={doc.type.toLowerCase()} theme="light" className="size-10 dark:hidden" />
+                        <FileIcon type={doc.type.toLowerCase()} theme="dark" className="size-10 not-dark:hidden" />
+                        <div className="whitespace-nowrap">
+                          <p className="text-sm font-medium text-primary">{doc.name}</p>
+                          <p className="text-sm text-tertiary">{doc.size}</p>
+                        </div>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell className="whitespace-nowrap">{doc.size}</Table.Cell>
+                    <Table.Cell>
+                      <BadgeWithDot
+                        size="sm"
+                        color={doc.status === "generated" ? "success" : doc.status === "draft" ? "warning" : "gray"}
+                      >
+                        {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
+                      </BadgeWithDot>
+                    </Table.Cell>
+                    <Table.Cell className="whitespace-nowrap">{doc.createdAt}</Table.Cell>
+                    <Table.Cell className="whitespace-nowrap md:hidden xl:table-cell">{doc.createdAt}</Table.Cell>
+                    <Table.Cell className="px-4">
+                      <div className="flex items-center justify-end">
+                        <TableRowActionsDropdown />
+                      </div>
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+              </Table.Body>
+            </Table>
+          </TableCard.Root>
+          {system.documents.length > ITEMS_PER_PAGE && (
+            <Paginations.PaginationCardDefault 
+              page={documentsPage} 
+              onPageChange={setDocumentsPage}
+              total={Math.ceil(system.documents.length / ITEMS_PER_PAGE)}
+            />
+          )}
+          </>
+        )}
+
+        {/* Evidence Tab */}
+        {activeTab === "evidence" && (
+          <>
+          <TableCard.Root>
+            <TableCard.Header
+              title="Evidence Files"
+              description="Uploaded evidence linked to compliance requirements."
+              contentTrailing={
+                <div className="absolute top-5 right-4 md:right-6">
+                  <Button size="sm" iconLeading={Upload01} onClick={() => setIsUploadEvidenceModalOpen(true)}>
+                    Upload Evidence
+                  </Button>
+                </div>
+              }
+            />
+            <Table aria-label="Evidence" selectionMode="none">
+              <Table.Header>
+                <Table.Head id="name" isRowHeader label="File" />
+                <Table.Head id="linked" label="Linked To" />
+                <Table.Head id="uploaded" label="Uploaded" />
+                <Table.Head id="by" label="By" />
+                <Table.Head id="actions" />
+              </Table.Header>
+              <Table.Body items={paginatedEvidence}>
+                {(ev) => (
+                  <Table.Row id={ev.id} className="odd:bg-secondary_subtle">
+                    <Table.Cell>
+                      <div className="flex items-center gap-3">
+                        <FileIcon type={ev.name.split(".").pop()?.toLowerCase() || "pdf"} theme="light" className="size-10 dark:hidden" />
+                        <FileIcon type={ev.name.split(".").pop()?.toLowerCase() || "pdf"} theme="dark" className="size-10 not-dark:hidden" />
+                        <div className="whitespace-nowrap">
+                          <p className="text-sm font-medium text-primary">{ev.name}</p>
+                          <p className="text-sm text-tertiary">{ev.size}</p>
+                        </div>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm text-secondary whitespace-nowrap">{ev.linkedTo}</span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm text-secondary whitespace-nowrap">{ev.uploadedAt}</span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm text-tertiary whitespace-nowrap">{ev.uploadedBy}</span>
+                    </Table.Cell>
+                    <Table.Cell className="px-4">
+                      <div className="flex items-center justify-end">
+                        <TableRowActionsDropdown />
+                      </div>
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+              </Table.Body>
+            </Table>
+          </TableCard.Root>
+          {system.evidence.length > ITEMS_PER_PAGE && (
+            <Paginations.PaginationCardDefault 
+              page={evidencePage} 
+              onPageChange={setEvidencePage}
+              total={Math.ceil(system.evidence.length / ITEMS_PER_PAGE)}
+            />
+          )}
+          </>
+        )}
+
+        {/* Activity Tab */}
+        {activeTab === "activity" && (
+          <>
+          <TableCard.Root>
+            <TableCard.Header
+              title="Activity History"
+              description="Recent actions and changes for this AI system."
+            />
+            <Table aria-label="Activity" selectionMode="none">
+              <Table.Header>
+                <Table.Head id="user" isRowHeader label="User" />
+                <Table.Head id="action" label="Action" />
+                <Table.Head id="target" label="Target" />
+                <Table.Head id="time" label="Time" />
+              </Table.Header>
+              <Table.Body items={paginatedActivity}>
+                {(item) => (
+                  <Table.Row id={item.id} className="odd:bg-secondary_subtle">
+                    <Table.Cell>
+                      <div className="flex items-center gap-3">
+                        <Avatar src={item.avatarUrl} alt={item.user} size="sm" />
+                        <span className="text-sm font-medium text-primary whitespace-nowrap">{item.user}</span>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm text-secondary whitespace-nowrap">{item.action}</span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm font-medium text-primary whitespace-nowrap">{item.target}</span>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <span className="text-sm text-tertiary whitespace-nowrap">{item.time}</span>
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+              </Table.Body>
+            </Table>
+          </TableCard.Root>
+          {system.activity.length > ITEMS_PER_PAGE && (
+            <Paginations.PaginationCardDefault 
+              page={activityPage} 
+              onPageChange={setActivityPage}
+              total={Math.ceil(system.activity.length / ITEMS_PER_PAGE)}
+            />
+          )}
+          </>
+        )}
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        title="Delete AI System"
+        description={`Are you sure you want to delete "${system.name}"? This action cannot be undone and all associated documents, evidence, and activity history will be permanently removed.`}
+        variant="destructive"
+        confirmText="Delete System"
+        cancelText="Cancel"
+        onConfirm={() => {
+          console.log("Deleting system:", system.id);
+          setIsDeleteModalOpen(false);
+        }}
+      />
+
+      {/* Duplicate System Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isDuplicateModalOpen}
+        onOpenChange={setIsDuplicateModalOpen}
+        title="Duplicate AI System"
+        description={`Create a copy of "${system.name}"? This will duplicate all system settings, requirements, and documents. Evidence files will need to be re-uploaded.`}
+        variant="warning"
+        confirmText="Duplicate"
+        cancelText="Cancel"
+        onConfirm={() => {
+          console.log("Duplicating system:", system.id);
+          setIsDuplicateModalOpen(false);
+          alert("System duplicated successfully!");
+        }}
+      />
+
+      {/* Export Data Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isExportModalOpen}
+        onOpenChange={setIsExportModalOpen}
+        title="Export System Data"
+        description={`Export all data for "${system.name}"? This will generate a ZIP file containing system configuration, documents, evidence files, and activity logs.`}
+        variant="success"
+        confirmText="Export Data"
+        cancelText="Cancel"
+        onConfirm={() => {
+          console.log("Exporting data for system:", system.id);
+          setIsExportModalOpen(false);
+          alert("Export started. You will receive a download link shortly.");
+        }}
+      />
+
+      {/* Generate Document Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isGenerateDocModalOpen}
+        onOpenChange={setIsGenerateDocModalOpen}
+        title="Generate Document"
+        description="Generate a new compliance document using AI? This will analyze your system data and create a draft document based on EU AI Act requirements."
+        variant="success"
+        confirmText="Generate Document"
+        cancelText="Cancel"
+        onConfirm={() => {
+          console.log("Generating document for system:", system.id);
+          setIsGenerateDocModalOpen(false);
+          alert("Document generation started. This may take a few minutes.");
+        }}
+      />
+
+      {/* Upload Evidence Modal */}
+      <UploadModal
+        isOpen={isUploadEvidenceModalOpen}
+        onOpenChange={setIsUploadEvidenceModalOpen}
+        title="Upload Evidence"
+        description="Upload files to serve as evidence for compliance requirements. Supported formats: PDF, DOC, XLS, CSV, PNG, JPG."
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg"
+        uploadButtonText="Upload Evidence"
+        onUpload={(files) => {
+          console.log("Uploading evidence files:", files);
+          alert(`${files.length} file(s) uploaded successfully!`);
+        }}
+      />
+    </div>
+  );
+}

@@ -1,0 +1,210 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/base/buttons/button";
+import type { ProgressFeaturedIconType } from "@/components/application/progress-steps/progress-types";
+import { cx } from "@/utils/cx";
+import {
+  CompanyDetailsStep,
+  EUPresenceStep,
+  AISystemsStep,
+  UseCasesStep,
+  DataTypesStep,
+  DecisionImpactStep,
+} from "./components";
+import { stepDefinitions, initialAssessmentData, type AssessmentData } from "./data/assessment-options";
+
+export default function AssessmentPage() {
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [data, setData] = useState<AssessmentData>(initialAssessmentData);
+
+  // Generate progress steps with status for the official Progress component
+  const progressSteps: ProgressFeaturedIconType[] = stepDefinitions.map((step) => ({
+    title: step.title,
+    description: step.description,
+    status: step.id < currentStep ? "complete" : step.id === currentStep ? "current" : "incomplete",
+    icon: step.icon,
+  }));
+
+  const handleNext = () => {
+    if (currentStep < stepDefinitions.length) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      localStorage.setItem("assessmentData", JSON.stringify(data));
+      router.push("/assessment/results");
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const updateData = (field: keyof AssessmentData, value: unknown) => {
+    setData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleArrayItem = (field: keyof AssessmentData, item: string) => {
+    const currentArray = data[field] as string[];
+    if (currentArray.includes(item)) {
+      updateData(field, currentArray.filter((i) => i !== item));
+    } else {
+      updateData(field, [...currentArray, item]);
+    }
+  };
+
+  const currentStepData = stepDefinitions[currentStep - 1];
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return <CompanyDetailsStep data={data} updateData={updateData} />;
+      case 2:
+        return <EUPresenceStep data={data} updateData={updateData} />;
+      case 3:
+        return <AISystemsStep data={data} toggleArrayItem={toggleArrayItem} />;
+      case 4:
+        return <UseCasesStep data={data} toggleArrayItem={toggleArrayItem} />;
+      case 5:
+        return <DataTypesStep data={data} toggleArrayItem={toggleArrayItem} />;
+      case 6:
+        return <DecisionImpactStep data={data} updateData={updateData} />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="grid h-full min-h-0 lg:grid-cols-3">
+      {/* Left Panel - Progress Steps (1/3 of screen) - Fixed */}
+      <aside className="hidden min-h-0 overflow-y-auto border-r border-secondary bg-secondary_subtle px-8 py-10 lg:block">
+        {/* Header Section */}
+        <div className="mb-10">
+          <h2 className="text-lg font-semibold text-primary">
+            EU AI Act Compliance Assessment
+          </h2>
+          <p className="mt-3 text-md text-tertiary leading-relaxed">
+            Complete this quick assessment to understand your organization's compliance requirements under the EU AI Act. We'll analyze your AI systems and provide a personalized compliance roadmap.
+          </p>
+          <p className="mt-2 text-sm text-quaternary">
+            Estimated time: 5-10 minutes
+          </p>
+        </div>
+        
+        {/* Custom stepper matching screenshot design */}
+        <div className="space-y-1">
+          {progressSteps.map((step, index) => {
+            const isComplete = step.status === "complete";
+            const isCurrent = step.status === "current";
+            const isLast = index === progressSteps.length - 1;
+            const Icon = step.icon;
+            
+            return (
+              <div key={step.title} className="relative">
+                {/* Connector line */}
+                {!isLast && (
+                  <div
+                    className={cx(
+                      "absolute left-6 top-14 h-full w-0.5",
+                      isComplete ? "bg-brand-600" : "bg-border-secondary"
+                    )}
+                  />
+                )}
+                
+                <div className="flex items-start gap-4 py-3">
+                  {/* Icon */}
+                  <div
+                    className={cx(
+                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+                      isComplete && "bg-brand-100",
+                      isCurrent && "bg-brand-100 ring-2 ring-brand-600 ring-offset-2 ring-offset-secondary_subtle",
+                      !isComplete && !isCurrent && "bg-primary border border-secondary"
+                    )}
+                  >
+                    {Icon && (
+                      <Icon
+                        className={cx(
+                          "h-6 w-6",
+                          isComplete && "text-brand-600",
+                          isCurrent && "text-brand-600",
+                          !isComplete && !isCurrent && "text-fg-quaternary"
+                        )}
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Text */}
+                  <div className="flex-1 pt-0.5">
+                    <p
+                      className={cx(
+                        "text-md font-semibold",
+                        (isComplete || isCurrent) ? "text-primary" : "text-tertiary"
+                      )}
+                    >
+                      {step.title}
+                    </p>
+                    <p className={cx(
+                      "mt-0.5 text-sm leading-relaxed",
+                      isCurrent ? "text-tertiary" : "text-quaternary"
+                    )}>
+                      {step.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </aside>
+
+      {/* Right Panel - Step Content (2/3 of screen) */}
+      <div className="flex min-h-0 flex-col lg:col-span-2">
+        {/* Step Header - Fixed at top */}
+        <div className="shrink-0 border-b border-secondary px-8 pt-8 pb-6 lg:px-12 lg:pt-10">
+          <p className="text-sm font-medium text-brand-600">
+            STEP {currentStep} OF {stepDefinitions.length}
+          </p>
+          <h1 className="mt-2 text-display-sm font-semibold text-primary">
+            {currentStepData.title}
+          </h1>
+          <p className="mt-2 text-tertiary">
+            {currentStepData.description}
+          </p>
+        </div>
+
+        {/* Step Content - Scrollable */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-8 py-8 lg:px-12">
+          {renderStepContent()}
+        </div>
+
+        {/* Navigation Footer - Fixed at bottom */}
+        <div className="shrink-0 border-t border-secondary bg-primary px-8 py-6 lg:px-12">
+          <div className="flex justify-between">
+            {currentStep > 1 ? (
+              <Button
+                color="secondary"
+                size="lg"
+                onClick={handleBack}
+              >
+                Back
+              </Button>
+            ) : (
+              <div />
+            )}
+            
+            <Button
+              color="primary"
+              size="lg"
+              onClick={handleNext}
+            >
+              {currentStep === stepDefinitions.length ? "See Results" : "Save and continue"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
