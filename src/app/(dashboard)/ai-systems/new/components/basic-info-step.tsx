@@ -40,7 +40,7 @@ export const BasicInfoStep = ({ formData, updateFormData }: BasicInfoStepProps) 
         label="Provider"
         placeholder="Select provider"
         selectedKey={formData.provider}
-        onSelectionChange={(key: React.Key) => updateFormData({ provider: key as string })}
+        onSelectionChange={(key) => key && updateFormData({ provider: key as string })}
         items={providers}
       >
         {(item) => <SelectItem id={item.id}>{item.label}</SelectItem>}
@@ -58,7 +58,7 @@ export const BasicInfoStep = ({ formData, updateFormData }: BasicInfoStepProps) 
         label="Deployment Status"
         placeholder="Select status"
         selectedKey={formData.deploymentStatus}
-        onSelectionChange={(key: React.Key) => updateFormData({ deploymentStatus: key as string })}
+        onSelectionChange={(key) => key && updateFormData({ deploymentStatus: key as string })}
         items={deploymentStatuses}
       >
         {(item) => <SelectItem id={item.id}>{item.label}</SelectItem>}
