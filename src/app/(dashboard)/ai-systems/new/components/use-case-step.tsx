@@ -25,7 +25,7 @@ export const UseCaseStep = ({ formData, updateFormData }: UseCaseStepProps) => {
         label="Primary Use Case"
         placeholder="Select use case category"
         selectedKey={formData.useCase}
-        onSelectionChange={(key: React.Key) => updateFormData({ useCase: key as string })}
+        onSelectionChange={(key) => key && updateFormData({ useCase: key as string })}
         items={useCaseCategories}
       >
         {(item) => <SelectItem id={item.id}>{item.label}</SelectItem>}
@@ -83,7 +83,7 @@ export const UseCaseStep = ({ formData, updateFormData }: UseCaseStepProps) => {
             label="Decision Automation Level"
             placeholder="Select automation level"
             selectedKey={formData.decisionType}
-            onSelectionChange={(key: React.Key) => updateFormData({ decisionType: key as string })}
+            onSelectionChange={(key) => key && updateFormData({ decisionType: key as string })}
             items={decisionTypes}
           >
             {(item) => <SelectItem id={item.id}>{item.label}</SelectItem>}
@@ -93,7 +93,7 @@ export const UseCaseStep = ({ formData, updateFormData }: UseCaseStepProps) => {
             label="Impact Level of Decisions"
             placeholder="Select impact level"
             selectedKey={formData.impactLevel}
-            onSelectionChange={(key: React.Key) => updateFormData({ impactLevel: key as string })}
+            onSelectionChange={(key) => key && updateFormData({ impactLevel: key as string })}
             items={impactLevels}
           >
             {(item) => <SelectItem id={item.id}>{item.label}</SelectItem>}

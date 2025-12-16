@@ -250,7 +250,7 @@ export const DocumentGeneratorModal = ({
                       </label>
                       <Select
                         selectedKey={selectedSystem}
-                        onSelectionChange={(key: Key) => setSelectedSystem(String(key))}
+                        onSelectionChange={(key) => key && setSelectedSystem(String(key))}
                         items={aiSystemOptions}
                         size="md"
                         placeholder="Choose an AI system..."

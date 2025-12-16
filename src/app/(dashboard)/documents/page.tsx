@@ -174,7 +174,7 @@ export default function DocumentsPage() {
             <div className="w-[180px]">
               <Select
                 selectedKey={typeFilter}
-                onSelectionChange={(key: Key) => setTypeFilter(String(key))}
+                onSelectionChange={(key) => key && setTypeFilter(String(key))}
                 items={documentTypeOptions}
                 size="sm"
                 placeholder="All Types"
@@ -187,7 +187,7 @@ export default function DocumentsPage() {
             <div className="w-[200px]">
               <Select
                 selectedKey={systemFilter}
-                onSelectionChange={(key: Key) => setSystemFilter(String(key))}
+                onSelectionChange={(key) => key && setSystemFilter(String(key))}
                 items={systemOptions}
                 size="sm"
                 placeholder="All Systems"

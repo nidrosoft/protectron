@@ -66,6 +66,7 @@ export function parseHotkey(hotkey: string, splitKey = "+", sequenceSplitKey = "
 
     return {
         ...modifiers,
+        hotkey,
         keys: singleCharKeys,
         description,
         isSequence,

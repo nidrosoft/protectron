@@ -79,7 +79,7 @@ export default function AISystemsPage() {
               <div className="w-[160px]">
                 <Select
                   selectedKey={riskFilter}
-                  onSelectionChange={(key: Key) => setRiskFilter(String(key) as RiskFilter)}
+                  onSelectionChange={(key) => key && setRiskFilter(String(key) as RiskFilter)}
                   items={riskFilterOptions}
                   size="sm"
                   placeholder="All Risk Levels"
@@ -92,7 +92,7 @@ export default function AISystemsPage() {
               <div className="w-[150px]">
                 <Select
                   selectedKey={statusFilter}
-                  onSelectionChange={(key: Key) => setStatusFilter(String(key) as StatusFilter)}
+                  onSelectionChange={(key) => key && setStatusFilter(String(key) as StatusFilter)}
                   items={statusFilterOptions}
                   size="sm"
                   placeholder="All Statuses"
