@@ -67,7 +67,7 @@ export const FeedItem = ({ user, date, action, attachment, comment, labels, mess
                     </div>
                 )}
             </div>
-            <div className={cx("flex flex-1 flex-col gap-3", connector && "pb-8")}>
+            <div className={cx("flex flex-1 flex-col gap-3", connector && "pb-6")}>
                 <header>
                     <div className="flex items-center gap-2">
                         <a

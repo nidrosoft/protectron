@@ -31,9 +31,9 @@ export const ActivitySection = ({
             View all
           </Link>
         </div>
-        <ul className="flex flex-col gap-4 divide-y divide-border-secondary">
+        <ul className="flex flex-col divide-y divide-border-secondary">
           {recentActivity.map((item) => (
-            <li key={item.id} className="pt-4 first:pt-0">
+            <li key={item.id} className="py-4 first:pt-0 last:pb-0">
               <FeedItem {...item} connector={false} size="sm" />
             </li>
           ))}

@@ -79,11 +79,6 @@ const navItems: NavItemType[] = [
     icon: createIcon(Chart2),
   },
   {
-    label: "Settings",
-    href: "/settings",
-    icon: createIcon(Setting2),
-  },
-  {
     label: "Resources",
     href: "/resources",
     icon: createIcon(Book),
@@ -92,6 +87,11 @@ const navItems: NavItemType[] = [
       { label: "Help Center", href: "/resources/help", icon: createIcon(InfoCircle) },
       { label: "Contact Support", href: "/resources/support", icon: createIcon(Headphone) },
     ],
+  },
+  {
+    label: "Settings",
+    href: "/settings",
+    icon: createIcon(Setting2),
   },
 ];
 
@@ -144,23 +144,23 @@ export default function DashboardLayout({
           {/* Left side - Compliance Status & Deadline */}
           <div className="flex items-center gap-4">
             {/* Compliance Status */}
-            <div className="flex items-center gap-2 rounded-lg border border-secondary bg-secondary_subtle px-3 py-1.5">
+            <div className="flex items-center gap-2 rounded-lg border border-success-200 bg-success-50 px-3 py-1.5">
               <div className="flex items-center gap-1.5">
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-pulse rounded-full bg-warning-400 opacity-75" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-warning-500" />
+                  <span className="absolute inline-flex h-full w-full animate-pulse rounded-full bg-success-400 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success-500" />
                 </span>
-                <span className="text-sm font-semibold text-primary">72%</span>
+                <span className="text-sm font-semibold text-success-700">91%</span>
               </div>
-              <span className="text-xs text-tertiary">Compliant</span>
+              <span className="text-xs text-success-600">Compliant</span>
             </div>
 
             {/* Upcoming Deadline */}
-            <div className="hidden sm:flex items-center gap-2 rounded-lg border border-warning-200 bg-warning-50 px-3 py-1.5">
-              <Calendar size={16} color="currentColor" className="text-warning-600" />
+            <div className="hidden sm:flex items-center gap-2 rounded-lg border border-secondary bg-secondary_subtle px-3 py-1.5">
+              <Calendar size={16} color="currentColor" className="text-tertiary" />
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium text-warning-700">Next deadline:</span>
-                <span className="text-xs font-semibold text-warning-800">45 days</span>
+                <span className="text-xs font-medium text-tertiary">Next deadline:</span>
+                <span className="text-xs font-semibold text-primary">Aug 2, 2026</span>
               </div>
             </div>
           </div>

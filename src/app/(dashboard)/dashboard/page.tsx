@@ -21,7 +21,7 @@ export default function DashboardPage() {
   
   const compliantCount = aiSystems.filter(s => s.status === "compliant").length;
   const inProgressCount = aiSystems.filter(s => s.status === "in_progress").length;
-  const notStartedCount = aiSystems.filter(s => s.status === "not_started").length;
+  const notStartedCount = aiSystems.filter(s => (s.status as string) === "not_started").length;
 
   const riskDistribution = {
     high: aiSystems.filter(s => s.riskLevel === "high").length,

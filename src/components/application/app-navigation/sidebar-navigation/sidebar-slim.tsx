@@ -154,7 +154,7 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                         <div className="sticky bottom-0 mt-auto flex justify-between border-t border-secondary bg-primary px-2 py-5">
                             <div>
                                 <p className="text-sm font-semibold text-primary">Olivia Rhye</p>
-                                <p className="text-sm text-tertiary">olivia@untitledui.com</p>
+                                <p className="text-sm text-tertiary">olivia@protectron.ai</p>
                             </div>
                             <div className="absolute top-2.5 right-0">
                                 <ButtonUtility size="sm" color="tertiary" tooltip="Log out" icon={LogOut01} />
@@ -217,7 +217,7 @@ export const SidebarNavigationSlim = ({ activeUrl, items, footerItems = [], hide
                                 size="md"
                                 src="https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80"
                                 title="Olivia Rhye"
-                                subtitle="olivia@untitledui.com"
+                                subtitle="olivia@protectron.ai"
                             />
 
                             <div className="absolute top-1/2 right-0 -translate-y-1/2">

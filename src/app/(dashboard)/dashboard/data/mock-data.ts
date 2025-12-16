@@ -90,7 +90,7 @@ export const teamActivity = [
   { name: "David Park", initials: "DP", completedToday: 1, avatar: null },
 ];
 
-// Mock data for AI Systems
+// Mock data for AI Systems - Positive compliance state for screenshots
 export const aiSystems = [
   {
     id: "system-01",
@@ -98,25 +98,25 @@ export const aiSystems = [
     riskLevel: "limited" as const,
     status: "compliant" as const,
     progress: 100,
-    requirements: { completed: 8, total: 8 },
+    requirements: { completed: 12, total: 12 },
     deadline: null,
   },
   {
     id: "system-02",
     name: "Automated Hiring Screener",
     riskLevel: "high" as const,
-    status: "in_progress" as const,
-    progress: 50,
-    requirements: { completed: 12, total: 24 },
-    deadline: "Aug 2, 2026",
+    status: "compliant" as const,
+    progress: 100,
+    requirements: { completed: 24, total: 24 },
+    deadline: null,
   },
   {
     id: "system-03",
     name: "Fraud Detection System",
     riskLevel: "high" as const,
     status: "in_progress" as const,
-    progress: 75,
-    requirements: { completed: 18, total: 24 },
+    progress: 85,
+    requirements: { completed: 20, total: 24 },
     deadline: "Aug 2, 2026",
   },
   {
@@ -125,17 +125,17 @@ export const aiSystems = [
     riskLevel: "minimal" as const,
     status: "compliant" as const,
     progress: 100,
-    requirements: { completed: 4, total: 4 },
+    requirements: { completed: 6, total: 6 },
     deadline: null,
   },
   {
     id: "system-05",
     name: "Lead Scoring Model",
     riskLevel: "limited" as const,
-    status: "not_started" as const,
-    progress: 0,
-    requirements: { completed: 0, total: 8 },
-    deadline: null,
+    status: "in_progress" as const,
+    progress: 75,
+    requirements: { completed: 9, total: 12 },
+    deadline: "Sep 15, 2026",
   },
 ];
 
