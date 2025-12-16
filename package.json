@@ -5,7 +5,8 @@
     "scripts": {
         "dev": "next dev --turbopack",
         "build": "next build",
-        "start": "next start"
+        "start": "next start",
+        "postinstall": "npm rebuild lightningcss --update-binary || true"
     },
     "dependencies": {
         "@internationalized/date": "^3.10.0",
