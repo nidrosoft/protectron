@@ -1,5 +1,5 @@
 [build]
-  command = "npm ci && npm rebuild lightningcss --build-from-source || true && npm run build"
+  command = "npm ci && npm run build"
   publish = ".next"
 
 [build.environment]

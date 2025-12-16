@@ -6,7 +6,7 @@
         "dev": "next dev --turbopack",
         "build": "next build",
         "start": "next start",
-        "postinstall": "npm rebuild lightningcss --build-from-source || true"
+        "postinstall": "node -e \"try{require('lightningcss')}catch(e){console.log('lightningcss check:',e.message)}\""
     },
     "dependencies": {
         "@internationalized/date": "^3.10.0",
@@ -50,6 +50,9 @@
         "tailwindcss": "^4.1.11",
         "tailwindcss-animate": "^1.0.7",
         "tailwindcss-react-aria-components": "^2.0.0"
+    },
+    "optionalDependencies": {
+        "lightningcss-linux-x64-gnu": "^1.29.0"
     },
     "devDependencies": {
         "@trivago/prettier-plugin-sort-imports": "^5.2.2",
