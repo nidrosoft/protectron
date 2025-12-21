@@ -1,11 +1,12 @@
 "use client";
 
-import { Add, Clock } from "iconsax-react";
-import { Upload01, Check } from "@untitledui/icons";
+import { Add, Clock, Warning2, Data } from "iconsax-react";
+import { Upload01, Check, ClipboardCheck } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Badge, BadgeWithDot } from "@/components/base/badges/badges";
 import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
 import { Table, TableCard, TableRowActionsDropdown } from "@/components/application/table/table";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
 import { cx } from "@/utils/cx";
 
 interface RequirementItem {
@@ -26,6 +27,7 @@ interface RequirementSection {
 interface RequirementsTabProps {
   system: {
     progress: number;
+    riskLevel: "high" | "limited" | "minimal";
     requirements: {
       completed: number;
       total: number;
@@ -36,6 +38,8 @@ interface RequirementsTabProps {
   onFilterChange: (filter: "all" | "pending" | "complete") => void;
   onUploadEvidence: () => void;
   onGenerateDocument: () => void;
+  onOpenFRIA?: () => void;
+  onOpenDataGovernance?: () => void;
 }
 
 const reqStatusConfig = {
@@ -50,6 +54,8 @@ export const RequirementsTab = ({
   onFilterChange,
   onUploadEvidence,
   onGenerateDocument,
+  onOpenFRIA,
+  onOpenDataGovernance,
 }: RequirementsTabProps) => {
   const getFilteredRequirements = () => {
     return system.requirements.sections.map(section => ({
@@ -63,8 +69,59 @@ export const RequirementsTab = ({
     })).filter(section => section.items.length > 0);
   };
 
+  // Show empty state when no requirements
+  if (system.requirements.total === 0) {
+    return (
+      <div className="flex h-full min-h-[400px] items-center justify-center">
+        <EmptyState size="md">
+          <EmptyState.Header pattern="grid">
+            <EmptyState.FeaturedIcon icon={ClipboardCheck} color="gray" theme="modern" />
+          </EmptyState.Header>
+          <EmptyState.Content>
+            <EmptyState.Title>No requirements assigned</EmptyState.Title>
+            <EmptyState.Description>
+              Requirements will be automatically assigned based on your AI system&apos;s risk level and type.
+            </EmptyState.Description>
+          </EmptyState.Content>
+        </EmptyState>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Compliance Tools */}
+      <div className="rounded-xl bg-primary p-4 shadow-xs ring-1 ring-secondary ring-inset">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-primary">Compliance Tools</h3>
+            <p className="text-xs text-tertiary mt-0.5">Generate required assessments and documentation</p>
+          </div>
+          <div className="flex gap-2">
+            {onOpenFRIA && (
+              <Button
+                size="sm"
+                color="secondary"
+                iconLeading={({ className }) => <Warning2 size={16} color="currentColor" className={className} />}
+                onClick={onOpenFRIA}
+              >
+                FRIA Assessment
+              </Button>
+            )}
+            {onOpenDataGovernance && (
+              <Button
+                size="sm"
+                color="secondary"
+                iconLeading={({ className }) => <Data size={16} color="currentColor" className={className} />}
+                onClick={onOpenDataGovernance}
+              >
+                Data Governance
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Filter and Progress Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-2">

@@ -1,14 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import {
   DocumentText,
   Folder,
   TickCircle,
   Clock,
+  ArrowRight2,
 } from "iconsax-react";
-import { AlertCircle } from "@untitledui/icons";
+import { AlertCircle, Plus, Clock as ClockIcon } from "@untitledui/icons";
 import { FeedItem, type FeedItemType } from "@/components/application/activity-feed/activity-feed";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
 import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
+import { Badge } from "@/components/base/badges/badges";
+import { Button } from "@/components/base/buttons/button";
+import { DelegationsSlideout } from "@/components/application/slideout-menus/delegations-slideout";
+import { type AgentRelationshipType, type RelatedAgent } from "../data/mock-data";
 
 interface OverviewTabProps {
   system: {
@@ -29,16 +36,32 @@ interface OverviewTabProps {
     activity: {
       id: string;
       user: string;
-      avatarUrl: string;
+      avatarUrl?: string;
       action: string;
       target: string;
       time: string;
     }[];
+    // Multi-agent fields
+    agentRole?: AgentRelationshipType;
+    relatedAgents?: RelatedAgent[];
+    multiAgentStats?: {
+      delegationsToday: number;
+      avgDelegationTime: number;
+    };
   };
   onViewAllActivity: () => void;
 }
 
+const relationshipConfig: Record<AgentRelationshipType, { label: string; color: "brand" | "purple" | "blue" | "success" }> = {
+  coordinator: { label: "Coordinator", color: "brand" },
+  specialist: { label: "Specialist", color: "purple" },
+  peer: { label: "Peer", color: "blue" },
+  supervisor: { label: "Supervisor", color: "success" },
+};
+
 export const OverviewTab = ({ system, onViewAllActivity }: OverviewTabProps) => {
+  const [isDelegationsSlideoutOpen, setIsDelegationsSlideoutOpen] = useState(false);
+
   return (
     <div className="flex flex-col gap-6">
       {/* Progress Card */}
@@ -123,6 +146,80 @@ export const OverviewTab = ({ system, onViewAllActivity }: OverviewTabProps) => 
         </div>
       </div>
 
+      {/* Multi-Agent Relationships - only show for agents with related agents */}
+      {system.relatedAgents && system.relatedAgents.length > 0 && (
+        <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary ring-inset">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-primary">Multi-Agent Relationships</h3>
+            <Button 
+              size="sm" 
+              color="secondary"
+              iconTrailing={({ className }) => <ArrowRight2 size={16} color="currentColor" className={className} />}
+              onClick={() => setIsDelegationsSlideoutOpen(true)}
+            >
+              View All Delegations
+            </Button>
+          </div>
+
+          {/* Visual Hierarchy with dot pattern background */}
+          <div 
+            className="flex flex-col items-center py-8 rounded-lg relative overflow-hidden"
+            style={{
+              backgroundImage: `radial-gradient(circle, #e5e7eb 1px, transparent 1px)`,
+              backgroundSize: '16px 16px',
+            }}
+          >
+            {/* Coordinator (this agent) */}
+            <div className="flex flex-col items-center relative z-10">
+              <div className="rounded-xl border-2 border-brand-300 bg-brand-50 px-6 py-4 text-center shadow-sm">
+                <p className="font-semibold text-primary">{system.name}</p>
+                {system.agentRole && (
+                  <Badge color={relationshipConfig[system.agentRole].color} size="sm" className="mt-1">
+                    {relationshipConfig[system.agentRole].label}
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Connector line */}
+              <div className="h-8 w-px bg-gray-300" />
+              
+              {/* Horizontal connector */}
+              <div className="relative w-full">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px bg-gray-300" style={{ width: `${Math.min(system.relatedAgents.length * 200, 600)}px` }} />
+                
+                {/* Vertical connectors to children */}
+                <div className="flex justify-center gap-6 pt-0 flex-wrap">
+                  {system.relatedAgents.map((agent) => (
+                    <div key={agent.id} className="flex flex-col items-center">
+                      <div className="h-4 w-px bg-gray-300" />
+                      <div className="rounded-lg border border-secondary bg-white px-4 py-3 text-center min-w-[180px] shadow-sm">
+                        <p className="text-sm font-medium text-primary">{agent.name}</p>
+                        <Badge color={relationshipConfig[agent.relationship].color} size="sm" className="mt-1">
+                          {relationshipConfig[agent.relationship].label}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          {system.multiAgentStats && (
+            <div className="flex items-center justify-center gap-8 pt-4 border-t border-secondary text-sm text-tertiary">
+              <span>
+                Delegations today: <strong className="text-primary">{system.multiAgentStats.delegationsToday}</strong>
+              </span>
+              <span className="text-secondary">│</span>
+              <span>
+                Avg delegation time: <strong className="text-primary">{system.multiAgentStats.avgDelegationTime}s</strong>
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Recent Activity */}
       <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary ring-inset">
         <div className="flex items-center justify-between mb-4">
@@ -134,30 +231,57 @@ export const OverviewTab = ({ system, onViewAllActivity }: OverviewTabProps) => 
             View all
           </button>
         </div>
-        <ul className="flex flex-col gap-4 divide-y divide-border-secondary">
-          {system.activity.slice(0, 3).map((item) => {
-            const feedItem: FeedItemType = {
-              id: item.id,
-              date: item.time,
-              user: {
-                avatarUrl: "",
-                name: item.user,
-                href: "#",
-              },
-              action: {
-                content: item.action,
-                target: item.target,
-                href: "#",
-              },
-            };
-            return (
-              <li key={item.id} className="pt-4 first:pt-0">
-                <FeedItem {...feedItem} connector={false} size="sm" />
-              </li>
-            );
-          })}
-        </ul>
+        {system.activity.length > 0 ? (
+          <ul className="flex flex-col gap-4 divide-y divide-border-secondary">
+            {system.activity.slice(0, 3).map((item) => {
+              const feedItem: FeedItemType = {
+                id: item.id,
+                date: item.time,
+                user: {
+                  avatarUrl: item.avatarUrl,
+                  name: item.user,
+                  href: "#",
+                },
+                action: {
+                  content: item.action,
+                  target: item.target,
+                  href: "#",
+                },
+              };
+              return (
+                <li key={item.id} className="pt-4 first:pt-0">
+                  <FeedItem {...feedItem} connector={false} size="sm" />
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div className="py-8 text-center">
+            <EmptyState size="sm">
+              <EmptyState.Header pattern="grid">
+                <EmptyState.FeaturedIcon icon={ClockIcon} color="gray" theme="modern" />
+              </EmptyState.Header>
+              <EmptyState.Content>
+                <EmptyState.Title>No activity yet</EmptyState.Title>
+                <EmptyState.Description>
+                  Activity will appear here as you work on compliance requirements.
+                </EmptyState.Description>
+              </EmptyState.Content>
+            </EmptyState>
+          </div>
+        )}
       </div>
+
+      {/* Delegations Slideout */}
+      {system.relatedAgents && system.relatedAgents.length > 0 && (
+        <DelegationsSlideout
+          isOpen={isDelegationsSlideoutOpen}
+          onOpenChange={setIsDelegationsSlideoutOpen}
+          agentName={system.name}
+          delegations={[]}
+          stats={system.multiAgentStats}
+        />
+      )}
     </div>
   );
 };

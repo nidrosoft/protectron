@@ -7,6 +7,7 @@ import { BadgeWithDot } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { Table, TableCard } from "@/components/application/table/table";
 import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
 import { riskLevelConfig, statusConfig } from "../data/mock-data";
 
 interface AISystem {
@@ -24,6 +25,37 @@ interface AISystemsTableProps {
 }
 
 export const AISystemsTable = ({ systems }: AISystemsTableProps) => {
+  if (systems.length === 0) {
+    return (
+      <div className="flex flex-col gap-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-primary">Compliance by AI System</h2>
+          <Button size="sm" color="secondary" iconLeading={Plus} href="/ai-systems/new">
+            Add System
+          </Button>
+        </div>
+        <div className="rounded-xl bg-primary p-8 shadow-xs ring-1 ring-secondary ring-inset">
+          <EmptyState size="sm">
+            <EmptyState.Header pattern="grid">
+              <EmptyState.FeaturedIcon icon={Cpu} color="gray" theme="modern" />
+            </EmptyState.Header>
+            <EmptyState.Content>
+              <EmptyState.Title>No AI systems yet</EmptyState.Title>
+              <EmptyState.Description>
+                Add your first AI system to start tracking EU AI Act compliance.
+              </EmptyState.Description>
+            </EmptyState.Content>
+            <EmptyState.Footer>
+              <Button size="md" iconLeading={Plus} href="/ai-systems/new">
+                Add AI System
+              </Button>
+            </EmptyState.Footer>
+          </EmptyState>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
@@ -40,7 +72,7 @@ export const AISystemsTable = ({ systems }: AISystemsTableProps) => {
             <Table.Head id="risk" label="Risk Level" />
             <Table.Head id="status" label="Status" />
             <Table.Head id="progress" label="Progress" className="min-w-32" />
-            <Table.Head id="deadline" label="Deadline" />
+            <Table.Head id="deadline" label="Deadline" className="whitespace-nowrap min-w-24" />
             <Table.Head id="actions" label="" className="w-12" />
           </Table.Header>
           <Table.Body items={systems}>
@@ -83,9 +115,9 @@ export const AISystemsTable = ({ systems }: AISystemsTableProps) => {
                     <span className="text-sm font-medium text-secondary">{system.progress}%</span>
                   </div>
                 </Table.Cell>
-                <Table.Cell>
+                <Table.Cell className="whitespace-nowrap">
                   {system.deadline ? (
-                    <span className="text-sm text-warning-600 font-medium">
+                    <span className="text-sm text-warning-600 font-medium whitespace-nowrap">
                       {system.deadline}
                     </span>
                   ) : (

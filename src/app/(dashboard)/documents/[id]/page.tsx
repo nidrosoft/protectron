@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import NextLink from "next/link";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -24,13 +24,16 @@ import {
   Sms,
   Save2,
   Edit2,
+  Clock,
 } from "iconsax-react";
 import { Button } from "@/components/base/buttons/button";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 import { Badge, BadgeWithDot } from "@/components/base/badges/badges";
 import { useToast } from "@/components/base/toast/toast";
 import { cx } from "@/utils/cx";
-import { EditorToolbar } from "./components";
-import { mockDocuments, documentTypeConfig, statusConfig } from "./data/mock-data";
+import { EditorToolbar, VersionHistoryPanel } from "./components";
+import { documentTypeConfig, statusConfig } from "./data/mock-data";
+import { useDocument } from "@/hooks";
 
 export default function DocumentEditorPage() {
   const params = useParams();
@@ -41,10 +44,21 @@ export default function DocumentEditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Get document data
-  const document = mockDocuments[documentId] || mockDocuments["doc-01"];
-  const typeConfig = documentTypeConfig[document.type];
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+
+  // Fetch document from API
+  const { document: apiDocument, isLoading, updateDocument } = useDocument(documentId);
+
+  // Get document type config
+  const docType = (apiDocument?.type as keyof typeof documentTypeConfig) || "technical";
+  const typeConfig = documentTypeConfig[docType] || documentTypeConfig.technical;
   const TypeIcon = typeConfig.icon;
+  
+  // Get status config
+  const docStatus = (apiDocument?.status as "draft" | "final") || "draft";
+  const currentStatusConfig = statusConfig[docStatus] || statusConfig.draft;
 
   const editor = useEditor({
     extensions: [
@@ -79,7 +93,7 @@ export default function DocumentEditorPage() {
       TableHeader,
       TableCell,
     ],
-    content: document.content,
+    content: apiDocument?.content || "<p>Start writing your document...</p>",
     editable: isEditing,
     immediatelyRender: false,
     editorProps: {
@@ -89,21 +103,38 @@ export default function DocumentEditorPage() {
     },
   });
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!editor) return;
     
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setLastSaved(new Date());
-      console.log("Document saved:", editor.getHTML());
+    try {
+      // Update document content and status via API
+      const content = editor.getHTML();
+      const success = await updateDocument({ content, status: "draft" });
+      if (success) {
+        setLastSaved(new Date());
+        addToast({
+          type: "success",
+          title: "Document saved",
+          message: "Your changes have been saved successfully.",
+        });
+      } else {
+        addToast({
+          type: "error",
+          title: "Save failed",
+          message: "Failed to save document. Please try again.",
+        });
+      }
+    } catch (error) {
       addToast({
-        type: "success",
-        title: "Document saved",
-        message: "Your changes have been saved successfully.",
+        type: "error",
+        title: "Save failed",
+        message: "An error occurred while saving.",
       });
-    }, 1000);
-  }, [editor, addToast]);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [editor, addToast, updateDocument]);
 
   const handleToggleEdit = () => {
     if (isEditing && editor) {
@@ -112,6 +143,52 @@ export default function DocumentEditorPage() {
     setIsEditing(!isEditing);
     editor?.setEditable(!isEditing);
   };
+
+  // Autosave functionality - save after 3 seconds of inactivity while editing
+  useEffect(() => {
+    if (!editor || !isEditing) return;
+
+    const handleUpdate = () => {
+      setHasUnsavedChanges(true);
+      
+      // Clear existing timer
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+      }
+      
+      // Set new timer for autosave after 3 seconds
+      autosaveTimerRef.current = setTimeout(async () => {
+        if (editor && isEditing) {
+          const content = editor.getHTML();
+          try {
+            const success = await updateDocument({ content });
+            if (success) {
+              setLastSaved(new Date());
+              setHasUnsavedChanges(false);
+            }
+          } catch (error) {
+            console.error("Autosave failed:", error);
+          }
+        }
+      }, 3000);
+    };
+
+    editor.on("update", handleUpdate);
+
+    return () => {
+      editor.off("update", handleUpdate);
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+      }
+    };
+  }, [editor, isEditing, updateDocument]);
+
+  // Update editor content when API document loads
+  useEffect(() => {
+    if (editor && apiDocument?.content && !isEditing) {
+      editor.commands.setContent(apiDocument.content);
+    }
+  }, [editor, apiDocument?.content, isEditing]);
 
   const addLink = useCallback(() => {
     if (!editor) return;
@@ -136,8 +213,8 @@ export default function DocumentEditorPage() {
 
   if (!editor) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
+      <div className="flex h-full min-h-[400px] items-center justify-center">
+        <LoadingIndicator type="dot-circle" size="md" label="Loading editor..." />
       </div>
     );
   }
@@ -161,12 +238,12 @@ export default function DocumentEditorPage() {
               <TypeIcon size={20} className={typeConfig.textColor} color="currentColor" variant="Bold" />
             </div>
             <div>
-              <h1 className="text-md font-semibold text-primary">{document.name}</h1>
+              <h1 className="text-md font-semibold text-primary">{apiDocument?.name || "Untitled Document"}</h1>
               <div className="flex items-center gap-2 text-sm text-tertiary">
-                <span>{document.systemName}</span>
+                <span>{apiDocument?.systemName || "Unknown System"}</span>
                 <span>•</span>
-                <BadgeWithDot size="sm" color={statusConfig[document.status].color}>
-                  {statusConfig[document.status].label}
+                <BadgeWithDot size="sm" color={currentStatusConfig.color}>
+                  {currentStatusConfig.label}
                 </BadgeWithDot>
                 {lastSaved && (
                   <>
@@ -185,20 +262,12 @@ export default function DocumentEditorPage() {
             <Button
               size="sm"
               color="secondary"
-              iconLeading={({ className }) => <Sms size={18} color="currentColor" className={className} />}
-              onClick={() => alert("Email functionality coming soon!")}
+              iconLeading={({ className }) => <Clock size={18} color="currentColor" className={className} />}
+              onClick={() => setIsVersionHistoryOpen(true)}
             >
-              Email
+              History
             </Button>
-            <Button
-              size="sm"
-              color="secondary"
-              iconLeading={({ className }) => <DocumentDownload size={18} color="currentColor" className={className} />}
-              onClick={() => alert("Download functionality coming soon!")}
-            >
-              Download
-            </Button>
-            <Button
+                        <Button
               size="sm"
               color={isEditing ? "primary" : "secondary"}
               iconLeading={({ className }) => isEditing 
@@ -240,9 +309,9 @@ export default function DocumentEditorPage() {
       <div className="shrink-0 border-t border-secondary bg-primary px-6 py-3 lg:px-8">
         <div className="flex items-center justify-between text-sm text-tertiary">
           <div className="flex items-center gap-4">
-            <span>Generated: {document.generatedAt}</span>
+            <span>Created: {apiDocument?.createdAt || "—"}</span>
             <span>•</span>
-            <span>Last updated: {document.updatedAt}</span>
+            <span>Last updated: {apiDocument?.updatedAt || "—"}</span>
           </div>
           <div className="flex items-center gap-2">
             <Badge size="sm" color={typeConfig.color}>
@@ -251,6 +320,17 @@ export default function DocumentEditorPage() {
           </div>
         </div>
       </div>
+
+      {/* Version History Panel */}
+      <VersionHistoryPanel
+        documentId={documentId}
+        isOpen={isVersionHistoryOpen}
+        onClose={() => setIsVersionHistoryOpen(false)}
+        onVersionRestored={(newDocId) => {
+          // Navigate to the new version
+          window.location.href = `/documents/${newDocId}`;
+        }}
+      />
     </div>
   );
 }

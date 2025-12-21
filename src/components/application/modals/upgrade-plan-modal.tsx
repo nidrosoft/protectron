@@ -13,6 +13,10 @@ import {
   Chart,
   Code,
   Headphones,
+  Activity,
+  Shield,
+  Timer1,
+  Award,
 } from "iconsax-react";
 import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components";
 import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
@@ -21,12 +25,13 @@ import { CloseButton } from "@/components/base/buttons/close-button";
 import { Badge } from "@/components/base/badges/badges";
 import { cx } from "@/utils/cx";
 
-type PlanId = "starter" | "growth" | "scale";
+type PlanId = "test" | "professional" | "growth" | "scale";
 
 interface Plan {
   id: PlanId;
   name: string;
   price: number;
+  currency?: string;
   description: string;
   icon: typeof Crown;
   color: string;
@@ -34,32 +39,57 @@ interface Plan {
   popular?: boolean;
   features: {
     aiSystems: number | "Unlimited";
-    storage: string;
-    teamMembers: number;
-    reportsPerMonth: number | "Unlimited";
-    apiAccess: boolean;
+    aiAgents: number | string;
+    eventsPerMonth: string;
+    sdkIntegration: boolean;
+    auditTrail: boolean;
+    hitlRules: boolean;
+    logRetention: string;
+    certificationBadges: boolean;
     support: string;
-    customTemplates: boolean;
   };
 }
 
 const plans: Plan[] = [
   {
-    id: "starter",
-    name: "Starter",
+    id: "test",
+    name: "Test Plan",
+    price: 3,
+    currency: "$",
+    description: "For testing payments only",
+    icon: Flash,
+    color: "text-green-600",
+    bgColor: "bg-green-100",
+    features: {
+      aiSystems: 1,
+      aiAgents: "0",
+      eventsPerMonth: "1,000",
+      sdkIntegration: false,
+      auditTrail: false,
+      hitlRules: false,
+      logRetention: "N/A",
+      certificationBadges: false,
+      support: "None",
+    },
+  },
+  {
+    id: "professional",
+    name: "Professional",
     price: 99,
-    description: "For small teams getting started with AI compliance",
+    description: "For solo founders and early startups",
     icon: Flash,
     color: "text-blue-600",
     bgColor: "bg-blue-100",
     features: {
       aiSystems: 3,
-      storage: "1GB",
-      teamMembers: 2,
-      reportsPerMonth: 2,
-      apiAccess: false,
+      aiAgents: "1*",
+      eventsPerMonth: "10,000",
+      sdkIntegration: false,
+      auditTrail: false,
+      hitlRules: false,
+      logRetention: "N/A",
+      certificationBadges: false,
       support: "Email",
-      customTemplates: false,
     },
   },
   {
@@ -73,12 +103,14 @@ const plans: Plan[] = [
     popular: true,
     features: {
       aiSystems: 10,
-      storage: "5GB",
-      teamMembers: 5,
-      reportsPerMonth: 10,
-      apiAccess: true,
-      support: "Priority",
-      customTemplates: false,
+      aiAgents: "3",
+      eventsPerMonth: "100,000",
+      sdkIntegration: true,
+      auditTrail: true,
+      hitlRules: true,
+      logRetention: "6 months",
+      certificationBadges: false,
+      support: "Email + Chat",
     },
   },
   {
@@ -90,13 +122,15 @@ const plans: Plan[] = [
     color: "text-purple-600",
     bgColor: "bg-purple-100",
     features: {
-      aiSystems: 50,
-      storage: "25GB",
-      teamMembers: 15,
-      reportsPerMonth: "Unlimited",
-      apiAccess: true,
-      support: "Dedicated",
-      customTemplates: true,
+      aiSystems: 25,
+      aiAgents: "10",
+      eventsPerMonth: "500,000",
+      sdkIntegration: true,
+      auditTrail: true,
+      hitlRules: true,
+      logRetention: "12 months",
+      certificationBadges: true,
+      support: "Priority",
     },
   },
 ];
@@ -104,62 +138,91 @@ const plans: Plan[] = [
 interface UpgradePlanModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  currentPlan?: PlanId;
+  currentPlan?: PlanId | "free";
   onSelectPlan?: (planId: PlanId) => void;
+  createCheckout?: (priceId: string, planSlug: string) => Promise<string | null>;
+  stripePriceIds?: Record<string, string>;
 }
 
 export const UpgradePlanModal = ({
   isOpen,
   onOpenChange,
-  currentPlan = "growth",
+  currentPlan = "free",
   onSelectPlan,
+  createCheckout,
+  stripePriceIds = {},
 }: UpgradePlanModalProps) => {
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleClose = () => {
     setSelectedPlan(null);
     setIsProcessing(false);
+    setError(null);
     onOpenChange(false);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!selectedPlan) return;
     
     setIsProcessing(true);
-    // Simulate checkout redirect
-    setTimeout(() => {
-      onSelectPlan?.(selectedPlan);
+    setError(null);
+
+    try {
+      // Get the Stripe price ID for the selected plan
+      const priceId = stripePriceIds[selectedPlan];
+      
+      if (!priceId) {
+        setError("Price configuration not found. Please contact support.");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!createCheckout) {
+        setError("Checkout not available. Please try again later.");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Create Stripe checkout session and redirect
+      const checkoutUrl = await createCheckout(priceId, selectedPlan);
+      
+      if (checkoutUrl) {
+        // Redirect to Stripe Checkout
+        window.location.href = checkoutUrl;
+      } else {
+        setError("Failed to create checkout session. Please try again.");
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
       setIsProcessing(false);
-      handleClose();
-    }, 1500);
+    }
   };
 
   const FeatureRow = ({ 
-    icon: Icon, 
     label, 
     value, 
     isBoolean = false 
   }: { 
-    icon: typeof Cpu; 
     label: string; 
     value: string | number | boolean; 
     isBoolean?: boolean;
   }) => (
-    <div className="flex items-center justify-between py-2">
-      <div className="flex items-center gap-2">
-        <Icon size={16} color="currentColor" className="text-tertiary" />
-        <span className="text-sm text-secondary">{label}</span>
-      </div>
+    <div className="flex items-center gap-2 py-1.5">
       {isBoolean ? (
         value ? (
-          <TickCircle size={18} color="currentColor" className="text-success-500" variant="Bold" />
+          <TickCircle size={16} color="currentColor" className="text-success-500 shrink-0" variant="Bold" />
         ) : (
-          <CloseCircle size={18} color="currentColor" className="text-gray-300" />
+          <CloseCircle size={16} color="currentColor" className="text-gray-300 shrink-0" />
         )
       ) : (
-        <span className="text-sm font-medium text-primary">{value}</span>
+        <TickCircle size={16} color="currentColor" className="text-success-500 shrink-0" variant="Bold" />
       )}
+      <span className="text-sm text-secondary">
+        {label}{!isBoolean && `: ${value}`}
+      </span>
     </div>
   );
 
@@ -168,7 +231,7 @@ export const UpgradePlanModal = ({
       <ModalOverlay isDismissable>
         <Modal>
           <Dialog>
-            <div className="relative w-full overflow-hidden rounded-2xl bg-primary shadow-xl sm:max-w-4xl">
+            <div className="relative w-full overflow-hidden rounded-2xl bg-primary shadow-xl sm:max-w-5xl">
               <CloseButton
                 onClick={handleClose}
                 theme="light"
@@ -188,7 +251,7 @@ export const UpgradePlanModal = ({
 
               {/* Content */}
               <div className="max-h-[70vh] overflow-y-auto px-6 py-6">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                   {plans.map((plan) => {
                     const Icon = plan.icon;
                     const isSelected = selectedPlan === plan.id;
@@ -236,17 +299,44 @@ export const UpgradePlanModal = ({
                         <p className="mt-1 text-sm text-tertiary">{plan.description}</p>
 
                         <div className="mt-4">
-                          <span className="text-3xl font-bold text-primary">${plan.price}</span>
+                          <span className="text-3xl font-bold text-primary">{plan.currency || "€"}{plan.price}</span>
                           <span className="text-sm text-tertiary">/month</span>
                         </div>
 
                         <div className="mt-4 flex-1 border-t border-secondary pt-4">
-                          <FeatureRow icon={Cpu} label="AI Systems" value={plan.features.aiSystems} />
-                          <FeatureRow icon={FolderOpen} label="Storage" value={plan.features.storage} />
-                          <FeatureRow icon={People} label="Team Members" value={plan.features.teamMembers} />
-                          <FeatureRow icon={Chart} label="Reports/month" value={plan.features.reportsPerMonth} />
-                          <FeatureRow icon={Code} label="API Access" value={plan.features.apiAccess} isBoolean />
-                          <FeatureRow icon={Headphones} label="Support" value={plan.features.support} />
+                          {/* Always included features first */}
+                          <FeatureRow label="AI Systems" value={plan.features.aiSystems} />
+                          <FeatureRow label="AI Agents (SDK)" value={plan.features.aiAgents} />
+                          <FeatureRow label="Events/month" value={plan.features.eventsPerMonth} />
+                          <FeatureRow label="Support" value={plan.features.support} />
+                          
+                          {/* Conditional features - included ones first */}
+                          {plan.features.sdkIntegration && (
+                            <FeatureRow label="SDK Integration" value={plan.features.sdkIntegration} isBoolean />
+                          )}
+                          {plan.features.auditTrail && (
+                            <FeatureRow label="Audit Trail & HITL" value={plan.features.auditTrail} isBoolean />
+                          )}
+                          {plan.features.logRetention !== "N/A" && (
+                            <FeatureRow label="Log Retention" value={plan.features.logRetention} />
+                          )}
+                          {plan.features.certificationBadges && (
+                            <FeatureRow label="Certification Badges" value={plan.features.certificationBadges} isBoolean />
+                          )}
+                          
+                          {/* Not included features last */}
+                          {!plan.features.sdkIntegration && (
+                            <FeatureRow label="SDK Integration" value={plan.features.sdkIntegration} isBoolean />
+                          )}
+                          {!plan.features.auditTrail && (
+                            <FeatureRow label="Audit Trail & HITL" value={plan.features.auditTrail} isBoolean />
+                          )}
+                          {plan.features.logRetention === "N/A" && (
+                            <FeatureRow label="Log Retention" value={false} isBoolean />
+                          )}
+                          {!plan.features.certificationBadges && (
+                            <FeatureRow label="Certification Badges" value={plan.features.certificationBadges} isBoolean />
+                          )}
                         </div>
 
                         {isSelected && (
@@ -275,6 +365,13 @@ export const UpgradePlanModal = ({
                   </div>
                 </div>
               </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="mx-6 mb-4 rounded-lg bg-error-50 border border-error-200 px-4 py-3">
+                  <p className="text-sm text-error-700">{error}</p>
+                </div>
+              )}
 
               {/* Footer */}
               <div className="flex items-center justify-between border-t border-secondary px-6 py-4">

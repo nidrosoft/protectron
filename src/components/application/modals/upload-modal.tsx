@@ -30,9 +30,13 @@ interface UploadModalProps {
   onUpload?: (files: UploadedFile[]) => void;
   uploadButtonText?: string;
   cancelButtonText?: string;
+  aiSystemId?: string;
+  requirementId?: string;
+  uploadToApi?: boolean;
 }
 
-const uploadFile = (file: File, onProgress: (progress: number) => void) => {
+// Simulated upload for UI feedback
+const simulateUpload = (file: File, onProgress: (progress: number) => void) => {
   let progress = 0;
   const interval = setInterval(() => {
     onProgress(++progress);
@@ -40,6 +44,45 @@ const uploadFile = (file: File, onProgress: (progress: number) => void) => {
       clearInterval(interval);
     }
   }, 50);
+};
+
+// Actual API upload
+const uploadFileToApi = async (
+  file: File, 
+  aiSystemId: string, 
+  requirementId?: string,
+  onProgress?: (progress: number) => void
+): Promise<{ success: boolean; data?: any; error?: string }> => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("ai_system_id", aiSystemId);
+    if (requirementId) {
+      formData.append("requirement_id", requirementId);
+    }
+
+    // Simulate progress for UX (actual upload doesn't provide progress easily)
+    onProgress?.(30);
+    
+    const response = await fetch("/api/v1/evidence/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    onProgress?.(80);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { success: false, error: errorData.error || "Upload failed" };
+    }
+
+    const result = await response.json();
+    onProgress?.(100);
+    
+    return { success: true, data: result.data };
+  } catch (error) {
+    return { success: false, error: "Network error" };
+  }
 };
 
 export const UploadModal = ({
@@ -52,6 +95,9 @@ export const UploadModal = ({
   maxSize = 10 * 1024 * 1024,
   onUpload,
   uploadButtonText = "Upload",
+  aiSystemId,
+  requirementId,
+  uploadToApi = false,
   cancelButtonText = "Cancel",
 }: UploadModalProps) => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -75,7 +121,7 @@ export const UploadModal = ({
     setUploadedFiles([...newFilesWithIds.map(({ fileObject: _, ...file }) => file), ...uploadedFiles]);
 
     newFilesWithIds.forEach(({ id, fileObject }) => {
-      uploadFile(fileObject, (progress) => {
+      simulateUpload(fileObject, (progress) => {
         setUploadedFiles((prev) => 
           prev.map((uploadedFile) => 
             uploadedFile.id === id ? { ...uploadedFile, progress } : uploadedFile
@@ -100,7 +146,7 @@ export const UploadModal = ({
 
     const fileObject = fileObjectsRef.current.get(id);
     if (fileObject) {
-      uploadFile(fileObject, (progress) => {
+      simulateUpload(fileObject, (progress) => {
         setUploadedFiles((prev) => 
           prev.map((uploadedFile) => 
             uploadedFile.id === id ? { ...uploadedFile, progress, failed: false } : uploadedFile
@@ -108,7 +154,7 @@ export const UploadModal = ({
         );
       });
     } else {
-      uploadFile(new File([], file.name, { type: file.type }), (progress) => {
+      simulateUpload(new File([], file.name, { type: file.type }), (progress) => {
         setUploadedFiles((prev) => 
           prev.map((uploadedFile) => 
             uploadedFile.id === id ? { ...uploadedFile, progress, failed: false } : uploadedFile
@@ -124,8 +170,35 @@ export const UploadModal = ({
     onOpenChange(false);
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     const completedFiles = uploadedFiles.filter((f) => f.progress === 100);
+    
+    // If uploadToApi is enabled and we have an aiSystemId, upload to the API
+    if (uploadToApi && aiSystemId) {
+      const uploadPromises = completedFiles.map(async (file) => {
+        const fileObject = fileObjectsRef.current.get(file.id);
+        if (fileObject) {
+          const result = await uploadFileToApi(fileObject, aiSystemId, requirementId);
+          if (!result.success) {
+            // Mark file as failed
+            setUploadedFiles((prev) =>
+              prev.map((f) => (f.id === file.id ? { ...f, failed: true } : f))
+            );
+          }
+          return result;
+        }
+        return { success: false, error: "File not found" };
+      });
+
+      const results = await Promise.all(uploadPromises);
+      const allSuccessful = results.every((r) => r.success);
+      
+      if (!allSuccessful) {
+        // Don't close modal if some uploads failed
+        return;
+      }
+    }
+    
     onUpload?.(completedFiles);
     setUploadedFiles([]);
     fileObjectsRef.current.clear();

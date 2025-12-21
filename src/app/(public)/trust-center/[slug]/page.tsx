@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import NextLink from "next/link";
 import {
@@ -18,59 +18,30 @@ import {
 import { Button } from "@/components/base/buttons/button";
 import { Badge } from "@/components/base/badges/badges";
 import { cx } from "@/utils/cx";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 
-// Mock organization data
-const mockOrganization = {
-  name: "Acme Corporation",
-  slug: "acme-corp",
-  logo: null,
-  industry: "Technology / SaaS",
-  complianceScore: 85,
-  lastUpdated: "December 12, 2025",
-  aiSystems: [
-    {
-      id: "system-01",
-      name: "Customer Support Chatbot",
-      riskLevel: "limited_risk",
-      status: "compliant",
-      requirementsComplete: 8,
-      requirementsTotal: 8,
-      lastAudit: "Dec 10, 2025",
-    },
-    {
-      id: "system-02",
-      name: "Fraud Detection System",
-      riskLevel: "high_risk",
-      status: "compliant",
-      requirementsComplete: 18,
-      requirementsTotal: 18,
-      lastAudit: "Dec 8, 2025",
-    },
-    {
-      id: "system-03",
-      name: "Content Recommender",
-      riskLevel: "minimal_risk",
-      status: "compliant",
-      requirementsComplete: 2,
-      requirementsTotal: 2,
-      lastAudit: "Dec 5, 2025",
-    },
-    {
-      id: "system-04",
-      name: "Automated Hiring Screener",
-      riskLevel: "high_risk",
-      status: "in_progress",
-      requirementsComplete: 15,
-      requirementsTotal: 24,
-      lastAudit: "Dec 1, 2025",
-    },
-  ],
-  documents: [
-    { name: "EU AI Act Compliance Policy", type: "Policy", date: "Dec 2025" },
-    { name: "Data Governance Framework", type: "Framework", date: "Dec 2025" },
-    { name: "Risk Management Procedures", type: "Procedure", date: "Nov 2025" },
-  ],
-};
+interface TrustCenterData {
+  name: string;
+  slug: string;
+  logo: string | null;
+  industry: string;
+  complianceScore: number;
+  lastUpdated: string;
+  aiSystems: {
+    id: string;
+    name: string;
+    riskLevel: string;
+    status: string;
+    requirementsComplete: number;
+    requirementsTotal: number;
+    lastAudit: string;
+  }[];
+  documents: {
+    name: string;
+    type: string;
+    date: string;
+  }[];
+}
 
 const riskLevelConfig = {
   high_risk: { label: "High-Risk", color: "warning" as const, bgColor: "bg-warning-100", textColor: "text-warning-700" },
@@ -88,15 +59,68 @@ export default function TrustCenterPage() {
   const params = useParams();
   const slug = params.slug as string;
   const [copied, setCopied] = useState(false);
+  const [org, setOrg] = useState<TrustCenterData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // In production, fetch organization data based on slug
-  const org = mockOrganization;
+  useEffect(() => {
+    const fetchTrustCenter = async () => {
+      try {
+        const response = await fetch(`/api/v1/trust-center/${slug}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError("Organization not found");
+          } else if (response.status === 403) {
+            setError("Trust center is not enabled for this organization");
+          } else {
+            setError("Failed to load trust center");
+          }
+          return;
+        }
+        const result = await response.json();
+        setOrg(result.data);
+      } catch (err) {
+        setError("Failed to load trust center");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (slug) {
+      fetchTrustCenter();
+    }
+  }, [slug]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <LoadingIndicator type="dot-circle" size="md" label="Loading trust center..." />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !org) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <Shield size={48} color="currentColor" className="text-gray-400 mx-auto" />
+          <h1 className="mt-4 text-xl font-semibold text-gray-900">Trust Center Not Available</h1>
+          <p className="mt-2 text-gray-600">{error || "This trust center could not be found."}</p>
+          <Button size="md" color="secondary" className="mt-6" onClick={() => window.history.back()}>
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const compliantSystems = org.aiSystems.filter((s) => s.status === "compliant").length;
   const totalSystems = org.aiSystems.length;

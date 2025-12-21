@@ -1,10 +1,11 @@
 "use client";
 
 import { FileIcon } from "@untitledui/file-icons";
-import { Upload01 } from "@untitledui/icons";
+import { Upload01, Folder } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Table, TableCard, TableRowActionsDropdown } from "@/components/application/table/table";
 import * as Paginations from "@/components/application/pagination/pagination";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
 
 interface Evidence {
   id: string;
@@ -33,6 +34,30 @@ export const EvidenceTab = ({
   itemsPerPage,
   onUploadEvidence,
 }: EvidenceTabProps) => {
+  // Show empty state when no evidence
+  if (evidence.length === 0) {
+    return (
+      <div className="flex h-full min-h-[400px] items-center justify-center">
+        <EmptyState size="md">
+          <EmptyState.Header pattern="grid">
+            <EmptyState.FeaturedIcon icon={Folder} color="gray" theme="modern" />
+          </EmptyState.Header>
+          <EmptyState.Content>
+            <EmptyState.Title>No evidence uploaded</EmptyState.Title>
+            <EmptyState.Description>
+              Upload evidence files to support your compliance requirements and demonstrate conformity.
+            </EmptyState.Description>
+          </EmptyState.Content>
+          <EmptyState.Footer>
+            <Button size="lg" iconLeading={Upload01} onClick={onUploadEvidence}>
+              Upload Evidence
+            </Button>
+          </EmptyState.Footer>
+        </EmptyState>
+      </div>
+    );
+  }
+
   return (
     <>
       <TableCard.Root>

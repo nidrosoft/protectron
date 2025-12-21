@@ -3,3 +3,7 @@ export { RequirementsTab } from "./requirements-tab";
 export { DocumentsTab } from "./documents-tab";
 export { EvidenceTab } from "./evidence-tab";
 export { ActivityTab } from "./activity-tab";
+export { AuditTrailTab } from "./audit-trail-tab";
+export { SDKSetupTab } from "./sdk-setup-tab";
+export { HITLRulesTab } from "./hitl-rules-tab";
+export { CertificationTab } from "./certification-tab";

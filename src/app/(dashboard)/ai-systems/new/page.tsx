@@ -4,64 +4,76 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Cpu } from "iconsax-react";
-import { ArrowLeft as ArrowLeftIcon, Building07, Target04, Database02, Globe04, CheckCircle } from "@untitledui/icons";
+import { ArrowLeft as ArrowLeftIcon, Building07, Target04, Database02, Globe04, CheckCircle, LayersThree01 } from "@untitledui/icons";
 import { Progress } from "@/components/application/progress-steps/progress-steps";
 import type { ProgressFeaturedIconType } from "@/components/application/progress-steps/progress-types";
 import { Button } from "@/components/base/buttons/button";
+import { useToast } from "@/components/base/toast/toast";
+import { useAISystems } from "@/hooks";
 import {
+  SystemTypeStep,
   BasicInfoStep,
   UseCaseStep,
   DataPrivacyStep,
   EUExposureStep,
   ReviewStep,
 } from "./components";
-import { initialFormData, type FormData } from "./data/form-options";
+import { initialFormData, type FormData, type AgentCapability } from "./data/form-options";
 
 // Step definitions for display
 const stepNames = [
-  { id: 1, name: "Basic Information", description: "System name and provider" },
-  { id: 2, name: "Use Case", description: "How the AI is used" },
-  { id: 3, name: "Data & Privacy", description: "Data types processed" },
-  { id: 4, name: "EU Exposure", description: "EU market presence" },
-  { id: 5, name: "Risk Classification", description: "Review and confirm" },
+  { id: 1, name: "System Type", description: "What kind of AI system" },
+  { id: 2, name: "Basic Information", description: "System name and details" },
+  { id: 3, name: "Use Case", description: "How the AI is used" },
+  { id: 4, name: "Data & Privacy", description: "Data types processed" },
+  { id: 5, name: "EU Exposure", description: "EU market presence" },
+  { id: 6, name: "Review", description: "Review and confirm" },
 ];
 
 // Function to generate progress steps based on current step
 const getProgressSteps = (currentStep: number): ProgressFeaturedIconType[] => [
   { 
-    title: "Basic Information", 
-    description: "System name and provider", 
+    title: "System Type", 
+    description: "What kind of AI system", 
     status: currentStep > 1 ? "complete" : currentStep === 1 ? "current" : "incomplete",
+    icon: LayersThree01 
+  },
+  { 
+    title: "Basic Information", 
+    description: "System name and details", 
+    status: currentStep > 2 ? "complete" : currentStep === 2 ? "current" : "incomplete",
     icon: Building07 
   },
   { 
     title: "Use Case", 
     description: "How the AI is used", 
-    status: currentStep > 2 ? "complete" : currentStep === 2 ? "current" : "incomplete",
+    status: currentStep > 3 ? "complete" : currentStep === 3 ? "current" : "incomplete",
     icon: Target04 
   },
   { 
     title: "Data & Privacy", 
     description: "Data types processed", 
-    status: currentStep > 3 ? "complete" : currentStep === 3 ? "current" : "incomplete",
+    status: currentStep > 4 ? "complete" : currentStep === 4 ? "current" : "incomplete",
     icon: Database02 
   },
   { 
     title: "EU Exposure", 
     description: "EU market presence", 
-    status: currentStep > 4 ? "complete" : currentStep === 4 ? "current" : "incomplete",
+    status: currentStep > 5 ? "complete" : currentStep === 5 ? "current" : "incomplete",
     icon: Globe04 
   },
   { 
-    title: "Risk Classification", 
+    title: "Review", 
     description: "Review and confirm", 
-    status: currentStep === 5 ? "current" : "incomplete",
+    status: currentStep === 6 ? "current" : "incomplete",
     icon: CheckCircle 
   },
 ];
 
 export default function NewAISystemPage() {
   const router = useRouter();
+  const { addToast } = useToast();
+  const { createSystem } = useAISystems();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -70,26 +82,42 @@ export default function NewAISystemPage() {
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
-  const toggleArrayItem = (field: "dataTypes" | "dataSubjects", item: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field].includes(item)
-        ? prev[field].filter(i => i !== item)
-        : [...prev[field], item],
-    }));
+  const toggleArrayItem = (field: "dataTypes" | "dataSubjects" | "agentCapabilities", item: string) => {
+    if (field === "agentCapabilities") {
+      setFormData(prev => ({
+        ...prev,
+        agentCapabilities: prev.agentCapabilities.includes(item as AgentCapability)
+          ? prev.agentCapabilities.filter(i => i !== item)
+          : [...prev.agentCapabilities, item as AgentCapability],
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: prev[field].includes(item)
+          ? prev[field].filter(i => i !== item)
+          : [...prev[field], item],
+      }));
+    }
   };
+
+  const isAgent = formData.systemType === "ai_agent";
 
   const canProceed = () => {
     switch (currentStep) {
       case 1:
-        return formData.name.trim() !== "" && formData.provider !== "";
+        return formData.systemType !== "";
       case 2:
-        return formData.useCase !== "";
+        if (isAgent) {
+          return formData.name.trim() !== "" && formData.agentFramework !== "";
+        }
+        return formData.name.trim() !== "" && formData.provider !== "";
       case 3:
-        return formData.dataTypes.length > 0;
+        return formData.useCase !== "";
       case 4:
-        return true;
+        return formData.dataTypes.length > 0;
       case 5:
+        return true;
+      case 6:
         return true;
       default:
         return false;
@@ -97,7 +125,7 @@ export default function NewAISystemPage() {
   };
 
   const handleNext = () => {
-    if (currentStep < 5) {
+    if (currentStep < 6) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -110,9 +138,67 @@ export default function NewAISystemPage() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    console.log("Submitting AI System:", formData);
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    router.push("/ai-systems");
+    
+    try {
+      // Determine risk level based on use case and data types
+      let riskLevel: "high" | "limited" | "minimal" = "minimal";
+      const highRiskUseCases = ["hiring", "credit_scoring", "law_enforcement", "education", "critical_infrastructure"];
+      const limitedRiskUseCases = ["customer_service", "content_generation", "recommendation"];
+      
+      if (highRiskUseCases.includes(formData.useCase)) {
+        riskLevel = "high";
+      } else if (limitedRiskUseCases.includes(formData.useCase) || formData.dataTypes.includes("biometric")) {
+        riskLevel = "limited";
+      }
+
+      // Create the AI system
+      const response = await createSystem({
+        name: formData.name,
+        description: formData.description,
+        system_type: formData.systemType,
+        risk_level: riskLevel,
+        provider: formData.provider || undefined,
+        model_name: formData.modelName || undefined,
+        category: formData.useCase,
+        agent_framework: formData.agentFramework || undefined,
+        agent_capabilities: formData.agentCapabilities.length > 0 ? formData.agentCapabilities : undefined,
+        is_multi_agent: formData.isMultiAgent,
+        serves_eu: formData.servesEU,
+        processes_in_eu: formData.processesInEU,
+        established_in_eu: formData.establishedInEU,
+      });
+
+      if (response.error) {
+        addToast({
+          title: "Error creating AI system",
+          message: response.error,
+          type: "error",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      addToast({
+        title: "AI System created",
+        message: `${formData.name} has been added successfully.`,
+        type: "success",
+      });
+
+      // Navigate to the new system's detail page
+      if (response.data?.id) {
+        router.push(`/ai-systems/${response.data.id}`);
+      } else {
+        router.push("/ai-systems");
+      }
+    } catch (error) {
+      console.error("Error creating AI system:", error);
+      addToast({
+        title: "Error",
+        message: "An unexpected error occurred while creating the AI system.",
+        type: "error",
+      });
+      setIsSubmitting(false);
+    }
   };
 
   // Show loading overlay when submitting
@@ -150,7 +236,7 @@ export default function NewAISystemPage() {
           </Link>
           <div>
             <h1 className="text-lg font-semibold text-primary">Add AI System</h1>
-            <p className="text-sm text-tertiary">Step {currentStep} of 5: {stepNames[currentStep - 1].name}</p>
+            <p className="text-sm text-tertiary">Step {currentStep} of 6: {stepNames[currentStep - 1].name}</p>
           </div>
         </div>
       </div>
@@ -177,22 +263,26 @@ export default function NewAISystemPage() {
       <div className="flex-1 overflow-y-auto px-6 py-8 lg:px-8">
         <div className="mx-auto max-w-2xl">
           {currentStep === 1 && (
-            <BasicInfoStep formData={formData} updateFormData={updateFormData} />
+            <SystemTypeStep formData={formData} updateFormData={updateFormData} />
           )}
 
           {currentStep === 2 && (
-            <UseCaseStep formData={formData} updateFormData={updateFormData} />
+            <BasicInfoStep formData={formData} updateFormData={updateFormData} toggleArrayItem={toggleArrayItem} />
           )}
 
           {currentStep === 3 && (
-            <DataPrivacyStep formData={formData} toggleArrayItem={toggleArrayItem} />
+            <UseCaseStep formData={formData} updateFormData={updateFormData} />
           )}
 
           {currentStep === 4 && (
-            <EUExposureStep formData={formData} updateFormData={updateFormData} />
+            <DataPrivacyStep formData={formData} toggleArrayItem={toggleArrayItem} />
           )}
 
           {currentStep === 5 && (
+            <EUExposureStep formData={formData} updateFormData={updateFormData} />
+          )}
+
+          {currentStep === 6 && (
             <ReviewStep formData={formData} />
           )}
         </div>
@@ -214,7 +304,7 @@ export default function NewAISystemPage() {
             <Button size="md" color="secondary" onClick={() => router.push("/ai-systems")}>
               Cancel
             </Button>
-            {currentStep < 5 ? (
+            {currentStep < 6 ? (
               <Button size="md" onClick={handleNext} disabled={!canProceed()}>
                 Continue
               </Button>

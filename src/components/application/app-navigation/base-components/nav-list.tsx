@@ -72,8 +72,8 @@ export const NavList = ({ activeUrl, items, className }: NavListProps) => {
                             badge={item.badge}
                             icon={item.icon}
                             href={item.href}
-                            current={currentItem?.href === item.href}
-                            open={open && currentItem?.href === item.href}
+                            current={activeUrl === item.href}
+                            open={open && activeUrl === item.href}
                         >
                             {item.label}
                         </NavItemBase>

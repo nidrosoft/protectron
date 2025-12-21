@@ -7,166 +7,39 @@ import {
   SearchNormal1,
   Cpu,
 } from "iconsax-react";
+import { ClipboardCheck } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { Select, type SelectItemType } from "@/components/base/select/select";
-import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { UploadModal } from "@/components/application/modals/upload-modal";
+import { DocumentGeneratorModal } from "@/components/application/modals/document-generator-modal";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
 import {
   RequirementSection,
   RequirementDetailSlideout,
   type Requirement,
   type RequirementStatus,
 } from "@/components/application/requirements";
+import { useAllRequirements } from "@/hooks";
 
 // Filter options
 const statusFilterOptions: SelectItemType[] = [
   { id: "all", label: "All Status" },
-  { id: "not_started", label: "Not Started" },
+  { id: "pending", label: "Not Started" },
   { id: "in_progress", label: "In Progress" },
-  { id: "complete", label: "Complete" },
+  { id: "completed", label: "Complete" },
   { id: "not_applicable", label: "Not Applicable" },
 ];
 
-const systemFilterOptions: SelectItemType[] = [
-  { id: "all", label: "All Systems" },
-  { id: "system-01", label: "Customer Support Chatbot" },
-  { id: "system-02", label: "Automated Hiring Screener" },
-  { id: "system-03", label: "Fraud Detection System" },
-];
-
-// Mock requirements data grouped by article
-const mockRequirements: Requirement[] = [
-  // Risk Management System (Article 9)
-  {
-    id: "req-1",
-    title: "Establish risk management system",
-    description: "Implement a comprehensive risk management system for the AI system.",
-    status: "complete",
-    articleId: "Article 9",
-    articleTitle: "Risk Management System",
-    systemId: "system-02",
-    systemName: "Automated Hiring Screener",
-    linkedEvidence: { id: "ev-1", name: "risk_management_policy.pdf", type: "PDF" },
-  },
-  {
-    id: "req-2",
-    title: "Identify and analyze known and foreseeable risks",
-    description: "Document all known and foreseeable risks associated with the AI system.",
-    status: "complete",
-    articleId: "Article 9",
-    articleTitle: "Risk Management System",
-    systemId: "system-02",
-    systemName: "Automated Hiring Screener",
-    linkedDocument: { id: "doc-1", name: "Risk Assessment Report", type: "generated" },
-  },
-  {
-    id: "req-3",
-    title: "Implement risk mitigation measures",
-    description: "Put in place appropriate risk mitigation measures.",
-    status: "in_progress",
-    articleId: "Article 9",
-    articleTitle: "Risk Management System",
-    systemId: "system-02",
-    systemName: "Automated Hiring Screener",
-  },
-  {
-    id: "req-4",
-    title: "Conduct testing for risk management",
-    description: "Test the effectiveness of risk management measures.",
-    status: "not_started",
-    articleId: "Article 9",
-    articleTitle: "Risk Management System",
-    systemId: "system-02",
-    systemName: "Automated Hiring Screener",
-  },
-  // Data Governance (Article 10)
-  {
-    id: "req-5",
-    title: "Implement data governance practices",
-    description: "Establish data governance and management practices.",
-    status: "complete",
-    articleId: "Article 10",
-    articleTitle: "Data Governance",
-    systemId: "system-02",
-    systemName: "Automated Hiring Screener",
-    linkedEvidence: { id: "ev-2", name: "data_governance_policy.pdf", type: "PDF" },
-  },
-  {
-    id: "req-6",
-    title: "Document training data characteristics",
-    description: "Document the characteristics of training, validation, and testing datasets.",
-    status: "in_progress",
-    articleId: "Article 10",
-    articleTitle: "Data Governance",
-    systemId: "system-02",
-    systemName: "Automated Hiring Screener",
-  },
-  {
-    id: "req-7",
-    title: "Ensure data quality for training sets",
-    description: "Implement measures to ensure data quality.",
-    status: "not_started",
-    articleId: "Article 10",
-    articleTitle: "Data Governance",
-    systemId: "system-02",
-    systemName: "Automated Hiring Screener",
-  },
-  {
-    id: "req-8",
-    title: "Address bias in training data",
-    description: "Identify and address potential biases in training data.",
-    status: "not_started",
-    articleId: "Article 10",
-    articleTitle: "Data Governance",
-    systemId: "system-02",
-    systemName: "Automated Hiring Screener",
-  },
-  // Human Oversight (Article 14)
-  {
-    id: "req-9",
-    title: "Enable human oversight capabilities",
-    description: "Design the system to allow effective human oversight.",
-    status: "complete",
-    articleId: "Article 14",
-    articleTitle: "Human Oversight",
-    systemId: "system-02",
-    systemName: "Automated Hiring Screener",
-    linkedDocument: { id: "doc-2", name: "Human Oversight Procedures", type: "generated" },
-  },
-  {
-    id: "req-10",
-    title: "Provide intervention mechanisms",
-    description: "Implement mechanisms for human intervention.",
-    status: "in_progress",
-    articleId: "Article 14",
-    articleTitle: "Human Oversight",
-    systemId: "system-02",
-    systemName: "Automated Hiring Screener",
-  },
-  // Technical Documentation (Article 11) - Different system
-  {
-    id: "req-11",
-    title: "Create technical documentation",
-    description: "Prepare comprehensive technical documentation.",
-    status: "complete",
-    articleId: "Article 11",
-    articleTitle: "Technical Documentation",
-    systemId: "system-01",
-    systemName: "Customer Support Chatbot",
-    linkedDocument: { id: "doc-3", name: "Technical Documentation", type: "generated" },
-  },
-  {
-    id: "req-12",
-    title: "Document system architecture",
-    description: "Document the overall system architecture and components.",
-    status: "complete",
-    articleId: "Article 11",
-    articleTitle: "Technical Documentation",
-    systemId: "system-01",
-    systemName: "Customer Support Chatbot",
-    linkedEvidence: { id: "ev-3", name: "system_architecture.pdf", type: "PDF" },
-  },
-];
+// Map API status to UI status
+const mapStatus = (status: string): RequirementStatus => {
+  const statusMap: Record<string, RequirementStatus> = {
+    pending: "not_started",
+    in_progress: "in_progress",
+    completed: "complete",
+    not_applicable: "not_applicable",
+  };
+  return statusMap[status] || "not_started";
+};
 
 // Group requirements by article
 const groupRequirementsByArticle = (requirements: Requirement[]) => {
@@ -194,17 +67,45 @@ export default function RequirementsPage() {
   const [isDetailSlideoutOpen, setIsDetailSlideoutOpen] = useState(false);
   const [selectedRequirement, setSelectedRequirement] = useState<Requirement | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
 
-  // Filter requirements
+  // Fetch real requirements data
+  const { requirements: apiRequirements, systems, stats, isLoading, refetch } = useAllRequirements({
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    systemId: systemFilter !== "all" ? systemFilter : undefined,
+  });
+
+  // Build system filter options from real data
+  const systemFilterOptions: SelectItemType[] = useMemo(() => [
+    { id: "all", label: "All Systems" },
+    ...systems.map(s => ({ id: s.id, label: s.name })),
+  ], [systems]);
+
+  // Transform API data to match component expectations
+  const requirements: Requirement[] = useMemo(() => {
+    return apiRequirements.map(req => ({
+      id: req.id,
+      title: req.title,
+      description: req.description,
+      status: mapStatus(req.status),
+      articleId: req.articleId,
+      articleTitle: req.articleTitle,
+      systemId: req.systemId,
+      systemName: req.systemName,
+      linkedEvidence: req.linkedEvidence,
+      linkedDocument: req.linkedDocument,
+    }));
+  }, [apiRequirements]);
+
+  // Filter by search query (client-side)
   const filteredRequirements = useMemo(() => {
-    return mockRequirements.filter((req) => {
+    if (!searchQuery) return requirements;
+    return requirements.filter((req) => {
       const matchesSearch = req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         req.articleTitle.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === "all" || req.status === statusFilter;
-      const matchesSystem = systemFilter === "all" || req.systemId === systemFilter;
-      return matchesSearch && matchesStatus && matchesSystem;
+      return matchesSearch;
     });
-  }, [searchQuery, statusFilter, systemFilter]);
+  }, [requirements, searchQuery]);
 
   // Group filtered requirements
   const groupedRequirements = useMemo(() => {
@@ -212,13 +113,11 @@ export default function RequirementsPage() {
   }, [filteredRequirements]);
 
   // Calculate overall progress
-  const completedCount = mockRequirements.filter(
-    (r) => r.status === "complete" || r.status === "not_applicable"
-  ).length;
-  const totalCount = mockRequirements.length;
+  const completedCount = stats.completed;
+  const totalCount = stats.total;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-  const isEmpty = mockRequirements.length === 0;
+  const isEmpty = requirements.length === 0 && !isLoading;
 
   const handleRequirementClick = (requirement: Requirement) => {
     setSelectedRequirement(requirement);
@@ -231,11 +130,32 @@ export default function RequirementsPage() {
   };
 
   const handleGenerateDocument = (requirement: Requirement) => {
-    alert(`Generate document for: ${requirement.title}`);
+    setSelectedRequirement(requirement);
+    setIsDocumentModalOpen(true);
   };
 
-  const handleStatusChange = (requirementId: string, status: RequirementStatus) => {
-    console.log("Status changed:", requirementId, status);
+  const handleStatusChange = async (requirementId: string, status: RequirementStatus) => {
+    // Map UI status to API status
+    const apiStatus = status === "complete" ? "completed" : status === "not_started" ? "pending" : status;
+    
+    try {
+      const response = await fetch(`/api/v1/requirements/${requirementId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: apiStatus }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to update requirement status");
+        return;
+      }
+
+      // Refresh the requirements list
+      await refetch();
+    } catch (error) {
+      console.error("Error updating requirement status:", error);
+    }
+    
     setIsDetailSlideoutOpen(false);
   };
 
@@ -317,26 +237,40 @@ export default function RequirementsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex h-full min-h-[400px] items-center justify-center">
+            <div className="animate-pulse space-y-4 w-full max-w-2xl">
+              <div className="h-24 bg-gray-200 rounded-xl" />
+              <div className="h-24 bg-gray-200 rounded-xl" />
+              <div className="h-24 bg-gray-200 rounded-xl" />
+            </div>
+          </div>
+        )}
+
         {/* Empty State */}
         {isEmpty && (
-          <div className="flex flex-col items-center justify-center py-16">
-            <FeaturedIcon color="brand" size="xl" theme="light">
-              <TickSquare size={28} color="currentColor" variant="Bold" />
-            </FeaturedIcon>
-            <h3 className="mt-4 text-lg font-semibold text-primary">No Requirements Yet</h3>
-            <p className="mt-2 max-w-md text-center text-sm text-tertiary">
-              Requirements will appear here once you add AI systems. Each system will have 
-              specific compliance requirements based on its risk classification.
-            </p>
-            <Button
-              size="lg"
-              color="primary"
-              className="mt-6"
-              iconLeading={({ className }) => <Cpu size={20} color="currentColor" className={className} />}
-              onClick={() => window.location.href = "/ai-systems/new"}
-            >
-              Add Your First AI System
-            </Button>
+          <div className="flex h-full min-h-[400px] items-center justify-center">
+            <EmptyState size="md">
+              <EmptyState.Header pattern="grid">
+                <EmptyState.FeaturedIcon icon={ClipboardCheck} color="gray" theme="modern" />
+              </EmptyState.Header>
+              <EmptyState.Content>
+                <EmptyState.Title>No requirements yet</EmptyState.Title>
+                <EmptyState.Description>
+                  Requirements will appear here once you add AI systems. Each system will have specific compliance requirements based on its risk classification.
+                </EmptyState.Description>
+              </EmptyState.Content>
+              <EmptyState.Footer>
+                <Button
+                  size="lg"
+                  iconLeading={({ className }) => <Cpu size={20} color="currentColor" className={className} />}
+                  onClick={() => window.location.href = "/ai-systems/new"}
+                >
+                  Add Your First AI System
+                </Button>
+              </EmptyState.Footer>
+            </EmptyState>
           </div>
         )}
 
@@ -358,27 +292,32 @@ export default function RequirementsPage() {
         )}
 
         {/* No Results */}
-        {!isEmpty && groupedRequirements.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16">
-            <FeaturedIcon color="gray" size="xl" theme="light">
-              <SearchNormal1 size={28} color="currentColor" />
-            </FeaturedIcon>
-            <h3 className="mt-4 text-lg font-semibold text-primary">No Results Found</h3>
-            <p className="mt-2 max-w-md text-center text-sm text-tertiary">
-              No requirements match your current filters. Try adjusting your search or filters.
-            </p>
-            <Button
-              size="md"
-              color="secondary"
-              className="mt-4"
-              onClick={() => {
-                setSearchQuery("");
-                setStatusFilter("all");
-                setSystemFilter("all");
-              }}
-            >
-              Clear Filters
-            </Button>
+        {!isEmpty && !isLoading && groupedRequirements.length === 0 && (
+          <div className="flex h-full min-h-[400px] items-center justify-center">
+            <EmptyState size="md">
+              <EmptyState.Header pattern="grid">
+                <EmptyState.FeaturedIcon icon={SearchNormal1} color="gray" theme="modern" />
+              </EmptyState.Header>
+              <EmptyState.Content>
+                <EmptyState.Title>No results found</EmptyState.Title>
+                <EmptyState.Description>
+                  No requirements match your current filters. Try adjusting your search or filters.
+                </EmptyState.Description>
+              </EmptyState.Content>
+              <EmptyState.Footer>
+                <Button
+                  size="lg"
+                  color="secondary"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setStatusFilter("all");
+                    setSystemFilter("all");
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </EmptyState.Footer>
+            </EmptyState>
           </div>
         )}
       </div>
@@ -411,9 +350,25 @@ export default function RequirementsPage() {
         allowsMultiple={true}
         maxSize={25 * 1024 * 1024}
         uploadButtonText="Upload Evidence"
-        onUpload={(files) => {
-          console.log("Uploaded files:", files);
+        aiSystemId={selectedRequirement?.systemId}
+        requirementId={selectedRequirement?.id}
+        uploadToApi={true}
+        onUpload={async (files) => {
+          // Refresh requirements to show linked evidence
+          await refetch();
           setIsUploadModalOpen(false);
+        }}
+      />
+
+      {/* Document Generator Modal */}
+      <DocumentGeneratorModal
+        isOpen={isDocumentModalOpen}
+        onOpenChange={setIsDocumentModalOpen}
+        preselectedSystemId={selectedRequirement?.systemId}
+        onGenerate={async (data) => {
+          // Refresh requirements after document generation
+          await refetch();
+          setIsDocumentModalOpen(false);
         }}
       />
     </div>

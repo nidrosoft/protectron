@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Key } from "react-aria-components";
 import {
   Chart,
@@ -18,76 +18,13 @@ import { Button } from "@/components/base/buttons/button";
 import { Badge, BadgeWithDot } from "@/components/base/badges/badges";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Select, type SelectItemType } from "@/components/base/select/select";
+import { useToast } from "@/components/base/toast/toast";
 import { FeaturedIcon } from "@/components/foundations/featured-icon/featured-icon";
 import { Table, TableCard } from "@/components/application/table/table";
+import { Dropdown } from "@/components/base/dropdown/dropdown";
 import { ReportTypeCard, type ReportType } from "@/components/application/reports";
-
-// System options
-const systemOptions: SelectItemType[] = [
-  { id: "system-01", label: "Customer Support Chatbot" },
-  { id: "system-02", label: "Automated Hiring Screener" },
-  { id: "system-03", label: "Fraud Detection System" },
-];
-
-// Mock previous reports data
-interface Report {
-  id: string;
-  type: ReportType;
-  name: string;
-  generatedAt: string;
-  systemsIncluded: number;
-  status: "ready" | "generating" | "failed";
-  fileSize: string;
-  generatedBy: string;
-  generatedByAvatar: string;
-}
-
-const mockReports: Report[] = [
-  {
-    id: "report-1",
-    type: "full",
-    name: "Full Compliance Report - Q4 2024",
-    generatedAt: "Dec 10, 2024",
-    systemsIncluded: 3,
-    status: "ready",
-    fileSize: "2.4 MB",
-    generatedBy: "David Park",
-    generatedByAvatar: "https://www.untitledui.com/images/avatars/phoenix-baker?fm=webp&q=80",
-  },
-  {
-    id: "report-2",
-    type: "executive",
-    name: "Executive Summary - Board Meeting",
-    generatedAt: "Dec 5, 2024",
-    systemsIncluded: 3,
-    status: "ready",
-    fileSize: "450 KB",
-    generatedBy: "Sarah Chen",
-    generatedByAvatar: "https://www.untitledui.com/images/avatars/lana-steiner?fm=webp&q=80",
-  },
-  {
-    id: "report-3",
-    type: "full",
-    name: "Full Compliance Report - Audit",
-    generatedAt: "Nov 28, 2024",
-    systemsIncluded: 2,
-    status: "ready",
-    fileSize: "1.8 MB",
-    generatedBy: "John Miller",
-    generatedByAvatar: "https://www.untitledui.com/images/avatars/demi-wilkinson?fm=webp&q=80",
-  },
-  {
-    id: "report-4",
-    type: "executive",
-    name: "Executive Summary - Investor Update",
-    generatedAt: "Nov 15, 2024",
-    systemsIncluded: 2,
-    status: "ready",
-    fileSize: "380 KB",
-    generatedBy: "David Park",
-    generatedByAvatar: "https://www.untitledui.com/images/avatars/phoenix-baker?fm=webp&q=80",
-  },
-];
+import { useAISystems, useReports } from "@/hooks";
+import type { Report } from "@/hooks/use-reports";
 
 const statusConfig = {
   ready: { label: "Ready", color: "success" as const, icon: TickCircle },
@@ -96,8 +33,16 @@ const statusConfig = {
 };
 
 export default function ReportsPage() {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [reports, setReports] = useState<Report[]>(mockReports);
+  // Fetch real reports data
+  const { reports, isLoading, generateReport, isGenerating } = useReports();
+  
+  // Fetch real AI systems for the dropdown
+  const { systems: aiSystems } = useAISystems();
+  
+  // Build system options from real data
+  const systemOptions: SelectItemType[] = useMemo(() => 
+    aiSystems.map(s => ({ id: s.id, label: s.name })),
+  [aiSystems]);
   
   // Form state
   const [reportType, setReportType] = useState<ReportType>("full");
@@ -111,28 +56,19 @@ export default function ReportsPage() {
     auditTrail: true,
   });
 
+  const { addToast } = useToast();
+
   const handleIncludeChange = (key: keyof typeof includeOptions) => {
     setIncludeOptions((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleGenerate = () => {
-    setIsGenerating(true);
-    
-    setTimeout(() => {
-      const newReport: Report = {
-        id: `report-${Date.now()}`,
-        type: reportType,
-        name: reportType === "full" ? "Full Compliance Report - New" : "Executive Summary - New",
-        generatedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-        systemsIncluded: scope === "all" ? 3 : 1,
-        status: "ready",
-        fileSize: reportType === "full" ? "2.1 MB" : "420 KB",
-        generatedBy: "You",
-        generatedByAvatar: "https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80",
-      };
-      setReports((prev) => [newReport, ...prev]);
-      setIsGenerating(false);
-    }, 2000);
+  const handleGenerate = async () => {
+    await generateReport({
+      reportType,
+      scope,
+      selectedSystemId: selectedSystem,
+      includeOptions,
+    });
   };
 
   const isEmpty = reports.length === 0;
@@ -384,23 +320,52 @@ export default function ReportsPage() {
                             size="sm"
                             color="tertiary"
                             iconLeading={({ className }) => <Eye size={16} color="currentColor" className={className} />}
-                            onClick={() => alert(`Viewing ${report.name}`)}
+                            onClick={() => window.open(`/api/v1/reports/${report.id}/pdf`, "_blank")}
+                            isDisabled={report.status !== "ready"}
                           >
                             View
                           </Button>
-                          <Button
-                            size="sm"
-                            color="tertiary"
-                            iconLeading={({ className }) => <DocumentDownload size={16} color="currentColor" className={className} />}
-                            onClick={() => alert(`Downloading ${report.name}`)}
-                          >
-                            Download
-                          </Button>
+                          <Dropdown.Root>
+                            <Button
+                              size="sm"
+                              color="tertiary"
+                              iconLeading={({ className }) => <DocumentDownload size={16} color="currentColor" className={className} />}
+                              isDisabled={report.status !== "ready"}
+                            >
+                              Download
+                            </Button>
+                            <Dropdown.Popover>
+                              <Dropdown.Menu>
+                                <Dropdown.Item 
+                                  label="Download as PDF" 
+                                  onAction={() => {
+                                    const link = document.createElement("a");
+                                    link.href = `/api/v1/reports/${report.id}/pdf`;
+                                    link.download = `${report.name}.pdf`;
+                                    link.click();
+                                  }} 
+                                />
+                                <Dropdown.Item 
+                                  label="Download as DOCX" 
+                                  onAction={() => {
+                                    const link = document.createElement("a");
+                                    link.href = `/api/v1/reports/${report.id}/download`;
+                                    link.download = `${report.name}.docx`;
+                                    link.click();
+                                  }} 
+                                />
+                              </Dropdown.Menu>
+                            </Dropdown.Popover>
+                          </Dropdown.Root>
                           <Button
                             size="sm"
                             color="tertiary"
                             iconLeading={({ className }) => <Share size={16} color="currentColor" className={className} />}
-                            onClick={() => alert(`Sharing ${report.name}`)}
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/api/v1/reports/${report.id}/pdf`);
+                              addToast({ type: "success", title: "Link copied", message: "Download link copied to clipboard!" });
+                            }}
+                            isDisabled={report.status !== "ready"}
                           >
                             Share
                           </Button>

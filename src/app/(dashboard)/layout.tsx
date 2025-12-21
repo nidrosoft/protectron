@@ -1,8 +1,8 @@
 "use client";
 
 import type { FC, HTMLAttributes } from "react";
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Category,
   Cpu,
@@ -24,6 +24,7 @@ import {
   Notification,
   Calendar,
   MessageQuestion as HelpIcon,
+  Warning2,
 } from "iconsax-react";
 import { ChevronLeft, ChevronRight } from "@untitledui/icons";
 import type { Icon as IconSaxIcon } from "iconsax-react";
@@ -32,7 +33,11 @@ import type { NavItemType, NavItemDividerType } from "@/components/application/a
 import { SidebarNavigationSimple } from "@/components/application/app-navigation/sidebar-navigation/sidebar-simple";
 import { ToastProvider } from "@/components/base/toast/toast";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
+import { NotificationsSlideout } from "@/components/application/slideout-menus/notifications-slideout";
+import { UpgradePlanModal } from "@/components/application/modals/upgrade-plan-modal";
 import { cx } from "@/utils/cx";
+import { useIncidents } from "@/hooks";
+import { createClient } from "@/lib/supabase/client";
 
 // Wrapper to make IconSax icons compatible with the sidebar
 // IconSax icons use size/color props, we wrap them to accept className for styling
@@ -46,7 +51,7 @@ const createIcon = (IconComponent: IconSaxIcon): FC<HTMLAttributes<HTMLOrSVGElem
   return WrappedIcon;
 };
 
-const navItems: NavItemType[] = [
+const getNavItems = (incidentsCount: number): NavItemType[] => [
   {
     label: "Dashboard",
     href: "/dashboard",
@@ -56,12 +61,16 @@ const navItems: NavItemType[] = [
     label: "AI Systems",
     href: "/ai-systems",
     icon: createIcon(Cpu),
+    items: [
+      { label: "All Systems", href: "/ai-systems" },
+      { label: "Agents", href: "/ai-systems?type=ai_agent" },
+      { label: "Models & Apps", href: "/ai-systems?type=other" },
+    ],
   },
   {
     label: "Requirements",
     href: "/requirements",
     icon: createIcon(TickSquare),
-    badge: 12,
   },
   {
     label: "Documents",
@@ -72,6 +81,12 @@ const navItems: NavItemType[] = [
     label: "Evidence",
     href: "/evidence",
     icon: createIcon(FolderOpen),
+  },
+  {
+    label: "Incidents",
+    href: "/incidents",
+    icon: createIcon(Warning2),
+    badge: incidentsCount > 0 ? incidentsCount : undefined,
   },
   {
     label: "Reports",
@@ -103,7 +118,77 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [complianceScore, setComplianceScore] = useState(0);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const supabase = createClient();
+  
+  // Fetch incidents count for sidebar badge
+  const { incidents } = useIncidents();
+  const navItems = useMemo(() => getNavItems(incidents.length), [incidents.length]);
+
+  // Fetch compliance score from AI systems
+  const fetchComplianceScore = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get user's organization
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("organization_id")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.organization_id) return;
+
+      // Get all AI systems for this organization and calculate average compliance
+      const { data: systems } = await supabase
+        .from("ai_systems")
+        .select("compliance_progress")
+        .eq("organization_id", profile.organization_id);
+
+      if (systems && systems.length > 0) {
+        const totalProgress = systems.reduce((sum, s) => sum + (s.compliance_progress || 0), 0);
+        const avgProgress = Math.round(totalProgress / systems.length);
+        setComplianceScore(avgProgress);
+      }
+    } catch (err) {
+      console.error("Error fetching compliance score:", err);
+    }
+  }, [supabase]);
+
+  // Fetch unread notification count
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count } = await (supabase as any)
+        .from("notification_log")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_read", false);
+
+      setUnreadNotificationCount(count || 0);
+    } catch (err) {
+      console.error("Error fetching unread count:", err);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchComplianceScore();
+    fetchUnreadCount();
+  }, [fetchComplianceScore, fetchUnreadCount]);
+
+  // Handle upgrade plan click
+  const handleUpgradePlan = () => {
+    setIsUpgradeModalOpen(true);
+  };
 
   return (
     <ToastProvider>
@@ -123,12 +208,12 @@ export default function DashboardLayout({
           featureCard={
             <FeaturedCardProgressCircle
               title="Compliance Progress"
-              description="Your organization is 35% compliant. Complete pending requirements to improve."
+              description={`Your organization is ${complianceScore}% compliant. Complete pending requirements to improve.`}
               confirmLabel="Upgrade Plan"
-              progress={35}
+              progress={complianceScore}
               className="hidden lg:flex"
               onDismiss={() => {}}
-              onConfirm={() => {}}
+              onConfirm={handleUpgradePlan}
             />
           }
         />
@@ -144,15 +229,34 @@ export default function DashboardLayout({
           {/* Left side - Compliance Status & Deadline */}
           <div className="flex items-center gap-4">
             {/* Compliance Status */}
-            <div className="flex items-center gap-2 rounded-lg border border-success-200 bg-success-50 px-3 py-1.5">
+            <div className={cx(
+              "flex items-center gap-2 rounded-lg border px-3 py-1.5",
+              complianceScore >= 80 
+                ? "border-success-200 bg-success-50" 
+                : complianceScore >= 50 
+                  ? "border-warning-200 bg-warning-50"
+                  : "border-error-200 bg-error-50"
+            )}>
               <div className="flex items-center gap-1.5">
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-pulse rounded-full bg-success-400 opacity-75" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-success-500" />
+                  <span className={cx(
+                    "absolute inline-flex h-full w-full animate-pulse rounded-full opacity-75",
+                    complianceScore >= 80 ? "bg-success-400" : complianceScore >= 50 ? "bg-warning-400" : "bg-error-400"
+                  )} />
+                  <span className={cx(
+                    "relative inline-flex h-2.5 w-2.5 rounded-full",
+                    complianceScore >= 80 ? "bg-success-500" : complianceScore >= 50 ? "bg-warning-500" : "bg-error-500"
+                  )} />
                 </span>
-                <span className="text-sm font-semibold text-success-700">91%</span>
+                <span className={cx(
+                  "text-sm font-semibold",
+                  complianceScore >= 80 ? "text-success-700" : complianceScore >= 50 ? "text-warning-700" : "text-error-700"
+                )}>{complianceScore}%</span>
               </div>
-              <span className="text-xs text-success-600">Compliant</span>
+              <span className={cx(
+                "text-xs",
+                complianceScore >= 80 ? "text-success-600" : complianceScore >= 50 ? "text-warning-600" : "text-error-600"
+              )}>Compliant</span>
             </div>
 
             {/* Upcoming Deadline */}
@@ -171,7 +275,7 @@ export default function DashboardLayout({
             <button
               type="button"
               className="flex h-10 w-10 items-center justify-center rounded-full border border-secondary bg-primary text-tertiary hover:bg-secondary_hover hover:text-secondary transition-colors shadow-sm"
-              onClick={() => window.location.href = "/resources/help"}
+              onClick={() => router.push("/resources/help")}
               aria-label="Help Center"
             >
               <HelpIcon size={20} color="currentColor" />
@@ -181,15 +285,17 @@ export default function DashboardLayout({
             <button
               type="button"
               className="relative flex h-10 w-10 items-center justify-center rounded-full border border-secondary bg-primary text-tertiary hover:bg-secondary_hover hover:text-secondary transition-colors shadow-sm"
-              onClick={() => alert("Notifications coming soon!")}
+              onClick={() => setIsNotificationsOpen(true)}
               aria-label="Notifications"
             >
               <Notification size={20} color="currentColor" />
               {/* Notification badge */}
-              <span className="absolute top-0 right-0 flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-error-400 opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-error-500 ring-2 ring-white" />
-              </span>
+              {unreadNotificationCount > 0 && (
+                <span className="absolute top-0 right-0 flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-error-400 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-error-500 ring-2 ring-white" />
+                </span>
+              )}
             </button>
           </div>
         </header>
@@ -213,6 +319,29 @@ export default function DashboardLayout({
           <ChevronLeft className="size-3.5 text-fg-quaternary" />
         )}
       </button>
+
+      {/* Notifications Slideout */}
+      <NotificationsSlideout 
+        isOpen={isNotificationsOpen} 
+        onOpenChange={(open) => {
+          setIsNotificationsOpen(open);
+          if (!open) {
+            // Refresh unread count when closing
+            fetchUnreadCount();
+          }
+        }} 
+      />
+
+      {/* Upgrade Plan Modal */}
+      <UpgradePlanModal
+        isOpen={isUpgradeModalOpen}
+        onOpenChange={setIsUpgradeModalOpen}
+        onSelectPlan={(planId) => {
+          // Navigate to billing tab to complete upgrade
+          setIsUpgradeModalOpen(false);
+          router.push("/settings?tab=billing");
+        }}
+      />
     </div>
     </ToastProvider>
   );

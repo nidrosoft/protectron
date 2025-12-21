@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Add } from "iconsax-react";
 import { Button } from "@/components/base/buttons/button";
 import { Avatar } from "@/components/base/avatar/avatar";
 import { Badge } from "@/components/base/badges/badges";
 import { Table, TableCard, TableRowActionsDropdown } from "@/components/application/table/table";
 import { useToast } from "@/components/base/toast/toast";
+import { InviteMemberModal } from "./invite-member-modal";
 
 interface TeamMember {
   id: string;
@@ -20,41 +21,9 @@ interface TeamMember {
 interface PendingInvite {
   id: string;
   email: string;
+  role: string;
   invitedAt: string;
 }
-
-const mockTeamMembers: TeamMember[] = [
-  {
-    id: "1",
-    name: "Cyriac Gbogou",
-    email: "cyriac@acme.com",
-    role: "owner",
-    avatar: "https://www.untitledui.com/images/avatars/phoenix-baker?fm=webp&q=80",
-    isCurrentUser: true,
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    email: "sarah@acme.com",
-    role: "admin",
-    avatar: "https://www.untitledui.com/images/avatars/lana-steiner?fm=webp&q=80",
-  },
-  {
-    id: "3",
-    name: "Marcus Chen",
-    email: "marcus@acme.com",
-    role: "member",
-    avatar: "https://www.untitledui.com/images/avatars/demi-wilkinson?fm=webp&q=80",
-  },
-];
-
-const mockPendingInvites: PendingInvite[] = [
-  {
-    id: "inv-1",
-    email: "elena@acme.com",
-    invitedAt: "Dec 10, 2024",
-  },
-];
 
 const roleConfig = {
   owner: { label: "Owner", color: "purple" as const },
@@ -64,37 +33,104 @@ const roleConfig = {
 
 export const TeamSettings = () => {
   const { addToast } = useToast();
-  const [members] = useState<TeamMember[]>(mockTeamMembers);
-  const [pendingInvites] = useState<PendingInvite[]>(mockPendingInvites);
-  const maxMembers = 5;
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [maxMembers, setMaxMembers] = useState(5);
+  const [userRole, setUserRole] = useState<string>("member");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  const handleInvite = () => {
-    addToast({
-      title: "Invite Member",
-      message: "Invite member modal would open here.",
-      type: "info",
-    });
+  const fetchTeamData = useCallback(async () => {
+    try {
+      // Fetch members
+      const membersRes = await fetch("/api/v1/team/members");
+      if (membersRes.ok) {
+        const { data, userRole: role, maxMembers: max } = await membersRes.json();
+        setMembers(data || []);
+        setUserRole(role || "member");
+        setMaxMembers(max || 5);
+      }
+
+      // Fetch pending invites
+      const invitesRes = await fetch("/api/v1/team/invites");
+      if (invitesRes.ok) {
+        const { data } = await invitesRes.json();
+        const transformedInvites = (data || []).map((invite: any) => ({
+          id: invite.id,
+          email: invite.email,
+          role: invite.role,
+          invitedAt: new Date(invite.created_at).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+        }));
+        setPendingInvites(transformedInvites);
+      }
+    } catch (error) {
+      console.error("Error fetching team data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTeamData();
+  }, [fetchTeamData]);
+
+  const canInvite = userRole === "owner" || userRole === "admin";
+
+  const handleResendInvite = async (id: string, email: string) => {
+    try {
+      const response = await fetch(`/api/v1/team/invites/${id}`, {
+        method: "POST",
+      });
+      if (response.ok) {
+        addToast({
+          title: "Invite resent",
+          message: `Invitation resent to ${email}.`,
+          type: "success",
+        });
+      }
+    } catch (error) {
+      console.error("Error resending invite:", error);
+    }
   };
 
-  const handleResendInvite = (email: string) => {
-    addToast({
-      title: "Invite resent",
-      message: `Invitation resent to ${email}.`,
-      type: "success",
-    });
+  const handleCancelInvite = async (id: string) => {
+    try {
+      const response = await fetch(`/api/v1/team/invites/${id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        setPendingInvites((prev) => prev.filter((inv) => inv.id !== id));
+        addToast({
+          title: "Invite cancelled",
+          message: "The invitation has been cancelled.",
+          type: "success",
+        });
+      }
+    } catch (error) {
+      console.error("Error cancelling invite:", error);
+    }
   };
 
-  const handleCancelInvite = (id: string) => {
-    addToast({
-      title: "Invite cancelled",
-      message: "The invitation has been cancelled.",
-      type: "warning",
-    });
-  };
+  if (isLoading) {
+    return (
+      <div className="px-6 py-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 w-48 bg-gray-200 rounded" />
+            <div className="h-32 w-full bg-gray-200 rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-6 py-6 lg:px-8">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-6xl">
         <div className="flex flex-col gap-6">
           {/* Section Header */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-secondary pb-5">
@@ -104,14 +140,16 @@ export const TeamSettings = () => {
                 Manage your team members and their access levels. ({members.length} of {maxMembers})
               </p>
             </div>
-            <Button
-              color="primary"
-              size="md"
-              iconLeading={({ className }) => <Add size={18} color="currentColor" className={className} />}
-              onClick={handleInvite}
-            >
-              Invite Member
-            </Button>
+            {canInvite && (
+              <Button
+                color="primary"
+                size="md"
+                iconLeading={({ className }) => <Add size={18} color="currentColor" className={className} />}
+                onClick={() => setIsInviteModalOpen(true)}
+              >
+                Invite Member
+              </Button>
+            )}
           </div>
 
           {/* Team Members - Two column layout */}
@@ -195,7 +233,7 @@ export const TeamSettings = () => {
                         <Button
                           size="sm"
                           color="secondary"
-                          onClick={() => handleResendInvite(invite.email)}
+                          onClick={() => handleResendInvite(invite.id, invite.email)}
                         >
                           Resend
                         </Button>
@@ -217,6 +255,21 @@ export const TeamSettings = () => {
           </div>
         </div>
       </div>
+
+      {/* Invite Member Modal */}
+      <InviteMemberModal
+        isOpen={isInviteModalOpen}
+        onOpenChange={setIsInviteModalOpen}
+        userRole={userRole}
+        onInviteSent={() => {
+          fetchTeamData();
+          addToast({
+            title: "Invitation sent",
+            message: "The team member invitation has been sent.",
+            type: "success",
+          });
+        }}
+      />
     </div>
   );
 };

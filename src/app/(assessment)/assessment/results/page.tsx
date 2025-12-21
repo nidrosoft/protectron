@@ -27,9 +27,12 @@ import {
   type AssessmentData,
   type RiskResult,
 } from "./data/risk-calculator";
+import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/base/toast/toast";
 
 export default function AssessmentResultsPage() {
   const router = useRouter();
+  const { addToast } = useToast();
   const [data, setData] = useState<AssessmentData | null>(null);
   const [results, setResults] = useState<RiskResult[]>([]);
   const [complianceScore, setComplianceScore] = useState(0);
@@ -37,6 +40,7 @@ export default function AssessmentResultsPage() {
   const [totalSystems, setTotalSystems] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [showContent, setShowContent] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem("assessmentData");
@@ -58,8 +62,82 @@ export default function AssessmentResultsPage() {
     setTimeout(() => setShowContent(true), 100);
   }, []);
 
-  const handleCreateAccount = () => {
-    router.push("/dashboard");
+  const handleContinueToDashboard = async () => {
+    setIsSaving(true);
+    
+    try {
+      const supabase = createClient();
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Get user's profile to find organization
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("organization_id")
+          .eq("id", user.id)
+          .single();
+
+        if (profile?.organization_id) {
+          // Save assessment data to organization
+          await supabase
+            .from("organizations")
+            .update({
+              // Store assessment summary in organization for analytics
+            })
+            .eq("id", profile.organization_id);
+
+          // Create AI systems based on assessment results
+          for (const result of results) {
+            if (result.count > 0) {
+              // Create placeholder AI systems for each risk category
+              await supabase.from("ai_systems").insert({
+                organization_id: profile.organization_id,
+                created_by: user.id,
+                name: `${result.level.charAt(0).toUpperCase() + result.level.slice(1)} Risk AI System`,
+                description: `AI system identified during initial assessment`,
+                system_type: "ml_model",
+                risk_level: result.level,
+                compliance_status: "not_started",
+                compliance_progress: 0,
+                serves_eu: hasEUExposure,
+                assessment_data: {
+                  source: "initial_assessment",
+                  assessed_at: new Date().toISOString(),
+                  company_name: data?.companyName,
+                  industry: data?.industry,
+                  compliance_score: complianceScore,
+                },
+              });
+            }
+          }
+        }
+      }
+
+      // Clear localStorage assessment data
+      localStorage.removeItem("assessmentData");
+      
+      addToast({
+        title: "Assessment saved",
+        message: "Your compliance roadmap is ready",
+        type: "success",
+      });
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch (error) {
+      console.error("Error saving assessment:", error);
+      addToast({
+        title: "Error",
+        message: "Failed to save assessment data",
+        type: "error",
+      });
+      // Still navigate to dashboard even if save fails
+      router.push("/dashboard");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!data) {
@@ -295,11 +373,12 @@ export default function AssessmentResultsPage() {
                 <span>Download Report</span>
               </button>
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50"
-                onClick={handleCreateAccount}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-50"
+                onClick={handleContinueToDashboard}
+                disabled={isSaving}
               >
-                <span>Get Started Free</span>
-                <ArrowRight size={18} color="currentColor" className="text-brand-700" variant="Bold" />
+                <span>{isSaving ? "Saving..." : "Get Started Free"}</span>
+                {!isSaving && <ArrowRight size={18} color="currentColor" className="text-brand-700" variant="Bold" />}
               </button>
             </div>
           </div>

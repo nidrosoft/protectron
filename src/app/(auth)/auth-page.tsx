@@ -11,6 +11,8 @@ import { SocialButton } from "@/components/base/buttons/social-button";
 import { Form } from "@/components/base/form/form";
 import { Input } from "@/components/base/input/input";
 import { cx } from "@/utils/cx";
+import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/base/toast/toast";
 
 type AuthMode = "signin" | "signup";
 
@@ -50,20 +52,102 @@ const carouselContent = [
 
 export function AuthPage() {
   const router = useRouter();
+  const { addToast } = useToast();
   const [mode, setMode] = useState<AuthMode>("signup");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const data = Object.fromEntries(new FormData(e.currentTarget));
-    console.log("Form data:", data);
+    setIsLoading(true);
     
-    if (mode === "signin") {
-      // Sign in goes directly to dashboard
-      router.push("/dashboard");
-    } else {
-      // Sign up goes to assessment/onboarding flow
-      router.push("/assessment");
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const name = formData.get("name") as string;
+    const company = formData.get("company") as string;
+
+    const supabase = createClient();
+
+    try {
+      if (mode === "signin") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          addToast({
+            title: "Sign in failed",
+            message: error.message,
+            type: "error",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        // Sign up user - the database trigger handles organization/profile creation
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+              company_name: company,
+            },
+            emailRedirectTo: `${window.location.origin}/assessment`,
+          },
+        });
+
+        if (authError) {
+          addToast({
+            title: "Sign up failed",
+            message: authError.message,
+            type: "error",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if email confirmation is required
+        if (authData.user && !authData.session) {
+          // Email confirmation required
+          addToast({
+            title: "Check your email",
+            message: "We sent you a confirmation link. Please check your email to complete signup.",
+            type: "success",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Sign up goes to assessment/onboarding flow
+        router.push("/assessment");
+        router.refresh();
+      }
+    } catch (error) {
+      addToast({
+        title: "Error",
+        message: "An unexpected error occurred",
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleGoogleAuth = async () => {
+    const supabase = createClient();
+    const redirectTo = mode === "signin" ? "/dashboard" : "/assessment";
+    
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback?next=${redirectTo}`,
+      },
+    });
   };
 
   return (
@@ -164,10 +248,10 @@ export function AuthPage() {
               </div>
 
               <div className="flex flex-col gap-4">
-                <Button type="submit" size="lg">
+                <Button type="submit" size="lg" isLoading={isLoading}>
                   {mode === "signup" ? "Get started" : "Sign in"}
                 </Button>
-                <SocialButton social="google" theme="color">
+                <SocialButton social="google" theme="color" onClick={handleGoogleAuth}>
                   {mode === "signup" ? "Sign up with Google" : "Sign in with Google"}
                 </SocialButton>
               </div>

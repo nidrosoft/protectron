@@ -15,11 +15,12 @@ export type FeedItemType = {
     message?: string;
     date?: string;
     user: {
-        avatarUrl: string;
+        avatarUrl?: string;
         name: string;
         href: string;
         username?: string;
         status?: "online" | "offline";
+        initials?: string;
     };
     attachment?: {
         name: string;
@@ -48,7 +49,13 @@ export const FeedItem = ({ user, date, action, attachment, comment, labels, mess
         <article className="relative flex gap-3">
             {unseen && <Dot size="md" className="absolute top-0 right-0 text-fg-success-secondary" />}
             <div className="flex shrink-0 flex-col">
-                <Avatar src={user.avatarUrl} alt={user.name} size={size === "sm" ? "sm" : "lg"} status={user.status} />
+                <Avatar 
+                    src={user.avatarUrl} 
+                    alt={user.name} 
+                    size={size === "sm" ? "sm" : "lg"} 
+                    status={user.status}
+                    initials={user.initials || user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                />
                 {connector && (
                     <div className="relative my-1 flex h-full w-full justify-center self-center overflow-hidden">
                         <svg className="absolute" width="2.4">

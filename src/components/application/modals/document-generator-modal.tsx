@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import type { Key } from "react-aria-components";
+import { useState, useEffect, useRef } from "react";
 import {
   DocumentText1,
   ClipboardText,
@@ -11,13 +10,28 @@ import {
   ArrowRight,
   TickCircle,
   Cpu,
+  Magicpen,
 } from "iconsax-react";
+
 import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components";
 import { Dialog, Modal, ModalOverlay } from "@/components/application/modals/modal";
 import { Button } from "@/components/base/buttons/button";
 import { CloseButton } from "@/components/base/buttons/close-button";
 import { Select, type SelectItemType } from "@/components/base/select/select";
 import { cx } from "@/utils/cx";
+import { generateDocument, getDocumentTypeName, type DocumentData } from "@/lib/document-generator";
+import { createClient } from "@/lib/supabase/client";
+import { useAISystems } from "@/hooks/use-ai-systems";
+
+// Rotating status messages for document generation (no AI references)
+const GENERATION_STEPS = [
+  "Gathering your information...",
+  "Analyzing system details...",
+  "Structuring your document...",
+  "Writing comprehensive content...",
+  "Applying professional formatting...",
+  "Finalizing your document...",
+];
 
 type DocumentType = "technical" | "risk" | "policy" | "model_card";
 
@@ -30,6 +44,7 @@ interface DocumentGeneratorModalProps {
     answers: Record<string, string>;
   }) => void;
   preselectedType?: DocumentType;
+  preselectedSystemId?: string;
 }
 
 const documentTypes = [
@@ -71,14 +86,6 @@ const documentTypes = [
   },
 ];
 
-// Mock AI Systems for selection
-const aiSystemOptions: SelectItemType[] = [
-  { id: "system-01", label: "Customer Support Chatbot" },
-  { id: "system-02", label: "Automated Hiring Screener" },
-  { id: "system-03", label: "Fraud Detection System" },
-  { id: "system-04", label: "Content Recommender" },
-  { id: "system-05", label: "Lead Scoring Model" },
-];
 
 // Questions per document type
 const questionsByType: Record<DocumentType, { id: string; label: string; placeholder: string }[]> = {
@@ -110,35 +117,161 @@ export const DocumentGeneratorModal = ({
   onOpenChange,
   onGenerate,
   preselectedType,
+  preselectedSystemId,
 }: DocumentGeneratorModalProps) => {
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState<DocumentType | null>(preselectedType || null);
-  const [selectedSystem, setSelectedSystem] = useState<string>("");
+  const [selectedSystem, setSelectedSystem] = useState<string>(preselectedSystemId || "");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState("");
+  const [generationStepIndex, setGenerationStepIndex] = useState(0);
+  const [generatedSections, setGeneratedSections] = useState<{ title: string; content: string }[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const generationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Rotate through generation steps every 4 seconds while generating
+  useEffect(() => {
+    if (isGenerating) {
+      setGenerationStepIndex(0);
+      generationIntervalRef.current = setInterval(() => {
+        setGenerationStepIndex((prev) => {
+          // Cycle through steps, staying on the last one if we've gone through all
+          if (prev < GENERATION_STEPS.length - 1) {
+            return prev + 1;
+          }
+          return prev; // Stay on last step
+        });
+      }, 4000); // 4 seconds per step
+    } else {
+      if (generationIntervalRef.current) {
+        clearInterval(generationIntervalRef.current);
+        generationIntervalRef.current = null;
+      }
+      setGenerationStepIndex(0);
+    }
+
+    return () => {
+      if (generationIntervalRef.current) {
+        clearInterval(generationIntervalRef.current);
+      }
+    };
+  }, [isGenerating]);
+  
+  // Fetch real AI systems
+  const { systems, isLoading: isLoadingSystems } = useAISystems();
+  const aiSystemOptions: SelectItemType[] = systems.map(s => ({ id: s.id, label: s.name }));
+  
+  const supabase = createClient();
 
   const handleClose = () => {
     setStep(1);
     setSelectedType(preselectedType || null);
-    setSelectedSystem("");
+    setSelectedSystem(preselectedSystemId || "");
     setAnswers({});
     setIsGenerating(false);
     setIsGenerated(false);
+    setGenerationProgress("");
+    setGeneratedSections([]);
+    setError(null);
     onOpenChange(false);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1 && selectedType) {
       setStep(2);
-    } else if (step === 2) {
+    } else if (step === 2 && selectedType) {
       setIsGenerating(true);
-      // Simulate generation
-      setTimeout(() => {
+      setError(null);
+      setGenerationProgress("Preparing document generation...");
+      
+      try {
+        // Get the selected system details
+        const selectedSystemData = systems.find(s => s.id === selectedSystem);
+        const systemName = selectedSystemData?.name || "AI System";
+        
+        // Get auth token for Edge Function
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error("Not authenticated");
+        }
+        
+        setGenerationProgress("AI is generating comprehensive content...");
+        
+        // Call the AI document generation Edge Function
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-document`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              documentType: selectedType,
+              systemInfo: {
+                name: systemName,
+                description: selectedSystemData?.description,
+                riskLevel: selectedSystemData?.risk_level,
+                provider: selectedSystemData?.provider,
+                modelName: selectedSystemData?.model_name,
+                systemType: selectedSystemData?.system_type,
+              },
+              answers,
+            }),
+          }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to generate document");
+        }
+        
+        const result = await response.json();
+        
+        if (!result.success || !result.content?.sections) {
+          throw new Error("Invalid response from AI");
+        }
+        
+        // Store the generated sections for preview
+        setGeneratedSections(result.content.sections);
+        
+        setGenerationProgress("Creating formatted document...");
+        
+        // Build document data with AI-generated content
+        const documentData: DocumentData = {
+          type: selectedType,
+          metadata: {
+            title: getDocumentTypeName(selectedType),
+            subtitle: `For ${systemName}`,
+            version: "1.0",
+            confidential: true,
+          },
+          aiSystem: {
+            id: selectedSystem,
+            name: systemName,
+            description: selectedSystemData?.description,
+            riskLevel: selectedSystemData?.risk_level,
+          },
+          answers: {
+            ...answers,
+            // Merge AI-generated content into answers for the document generator
+            _aiGenerated: JSON.stringify(result.content.sections),
+          },
+        } as DocumentData;
+        
+        // Generate and download the formatted document
+        await generateDocument(documentData, { format: "docx", download: true });
+        
         setIsGenerating(false);
         setIsGenerated(true);
         setStep(3);
-      }, 2000);
+      } catch (err) {
+        console.error("Error generating document:", err);
+        setError(err instanceof Error ? err.message : "Failed to generate document");
+        setIsGenerating(false);
+      }
     }
   };
 
@@ -307,24 +440,24 @@ export const DocumentGeneratorModal = ({
                         </div>
                       </div>
 
-                      <div className="mt-6 rounded-lg bg-primary p-4 ring-1 ring-secondary ring-inset">
+                      <div className="mt-6 rounded-lg bg-primary p-4 ring-1 ring-secondary ring-inset max-h-64 overflow-y-auto">
                         <h5 className="text-sm font-semibold text-primary uppercase tracking-wide">
                           {selectedTypeConfig.name}
                         </h5>
                         <div className="mt-4 space-y-4 text-sm text-secondary">
-                          <div>
-                            <p className="font-medium text-primary">1. General Description</p>
-                            <p className="mt-1 text-tertiary">
-                              {answers.purpose || answers.risks || answers.data_sources || answers.capabilities || "Document content will appear here..."}
+                          {generatedSections.slice(0, 3).map((section, index) => (
+                            <div key={index}>
+                              <p className="font-medium text-primary">{section.title}</p>
+                              <p className="mt-1 text-tertiary line-clamp-3">
+                                {section.content.substring(0, 200)}...
+                              </p>
+                            </div>
+                          ))}
+                          {generatedSections.length > 3 && (
+                            <p className="text-xs text-quaternary italic">
+                              [+{generatedSections.length - 3} more sections in the downloaded document]
                             </p>
-                          </div>
-                          <div>
-                            <p className="font-medium text-primary">2. Technical Details</p>
-                            <p className="mt-1 text-tertiary">
-                              {answers.data || answers.mitigation || answers.quality || answers.limitations || "Additional details..."}
-                            </p>
-                          </div>
-                          <p className="text-xs text-quaternary italic">[Document continues... click "Edit in Full Editor" to see more]</p>
+                          )}
                         </div>
                       </div>
 
@@ -348,9 +481,26 @@ export const DocumentGeneratorModal = ({
                 {/* Generating State */}
                 {step === 2 && isGenerating && (
                   <div className="flex flex-col items-center justify-center py-12">
-                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
-                    <p className="mt-4 text-sm font-medium text-primary">Generating your document...</p>
-                    <p className="mt-1 text-sm text-tertiary">This may take a few moments</p>
+                    <div className="relative">
+                      <div className="h-16 w-16 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
+                      <Magicpen size={24} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-brand-600" color="currentColor" variant="Bold" />
+                    </div>
+                    <p className="mt-6 text-md font-semibold text-primary">We are working on your document...</p>
+                    <p className="mt-2 text-sm text-tertiary transition-opacity duration-300">
+                      {GENERATION_STEPS[generationStepIndex]}
+                    </p>
+                    <p className="mt-4 text-xs text-quaternary">This typically takes 15-30 seconds</p>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {error && !isGenerating && (
+                  <div className="rounded-lg bg-error-50 p-4 mb-4">
+                    <p className="text-sm font-medium text-error-700">Generation failed</p>
+                    <p className="text-sm text-error-600 mt-1">{error}</p>
+                    <Button size="sm" color="secondary" className="mt-3" onClick={() => setError(null)}>
+                      Try Again
+                    </Button>
                   </div>
                 )}
               </div>

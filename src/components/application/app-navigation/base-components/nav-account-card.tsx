@@ -1,16 +1,17 @@
 "use client";
 
 import type { FC, HTMLAttributes } from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Placement } from "@react-types/overlays";
-import { BookOpen01, ChevronSelectorVertical, LogOut01, Plus, Settings01, User01 } from "@untitledui/icons";
+import { BookOpen01, ChevronSelectorVertical, LogOut01, Settings01, User01, Calendar } from "@untitledui/icons";
 import { useFocusManager } from "react-aria";
 import type { DialogProps as AriaDialogProps } from "react-aria-components";
 import { Button as AriaButton, Dialog as AriaDialog, DialogTrigger as AriaDialogTrigger, Popover as AriaPopover } from "react-aria-components";
 import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
-import { Button } from "@/components/base/buttons/button";
-import { RadioButtonBase } from "@/components/base/radio-buttons/radio-buttons";
+import { Badge } from "@/components/base/badges/badges";
 import { useBreakpoint } from "@/hooks/use-breakpoint";
+import { createClient } from "@/lib/supabase/client";
 import { cx } from "@/utils/cx";
 
 type NavAccountType = {
@@ -21,35 +22,28 @@ type NavAccountType = {
     /** Email address of the account holder. */
     email: string;
     /** Avatar image URL. */
-    avatar: string;
+    avatar: string | null;
     /** Online status of the account holder. This is used to display the online status indicator. */
     status: "online" | "offline";
+    /** User role */
+    role?: string;
+    /** Member since date */
+    memberSince?: string;
 };
-
-const placeholderAccounts: NavAccountType[] = [
-    {
-        id: "olivia",
-        name: "Olivia Rhye",
-        email: "olivia@protectron.ai",
-        avatar: "https://www.untitledui.com/images/avatars/olivia-rhye?fm=webp&q=80",
-        status: "online",
-    },
-    {
-        id: "sienna",
-        name: "Sienna Hewitt",
-        email: "sienna@untitledui.com",
-        avatar: "https://www.untitledui.com/images/avatars/transparent/sienna-hewitt?bg=%23E0E0E0",
-        status: "online",
-    },
-];
 
 export const NavAccountMenu = ({
     className,
-    selectedAccountId = "olivia",
+    account,
+    onSignOut,
     ...dialogProps
-}: AriaDialogProps & { className?: string; accounts?: NavAccountType[]; selectedAccountId?: string }) => {
+}: AriaDialogProps & { 
+    className?: string; 
+    account?: NavAccountType | null;
+    onSignOut?: () => void;
+}) => {
     const focusManager = useFocusManager();
     const dialogRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
 
     const onKeyDown = useCallback(
         (e: KeyboardEvent) => {
@@ -78,46 +72,78 @@ export const NavAccountMenu = ({
         };
     }, [onKeyDown]);
 
+    const getRoleBadgeColor = (role?: string) => {
+        switch (role) {
+            case "owner": return "brand";
+            case "admin": return "purple";
+            default: return "gray";
+        }
+    };
+
+    const formatRole = (role?: string) => {
+        if (!role) return "Member";
+        return role.charAt(0).toUpperCase() + role.slice(1);
+    };
+
     return (
         <AriaDialog
             {...dialogProps}
             ref={dialogRef}
-            className={cx("w-66 rounded-xl bg-secondary_alt shadow-lg ring ring-secondary_alt outline-hidden", className)}
+            className={cx("w-72 rounded-xl bg-secondary_alt shadow-lg ring ring-secondary_alt outline-hidden", className)}
         >
             <div className="rounded-xl bg-primary ring-1 ring-secondary">
-                <div className="flex flex-col gap-0.5 py-1.5">
-                    <NavAccountCardMenuItem label="View profile" icon={User01} shortcut="⌘K->P" />
-                    <NavAccountCardMenuItem label="Account settings" icon={Settings01} shortcut="⌘S" />
-                    <NavAccountCardMenuItem label="Documentation" icon={BookOpen01} />
-                </div>
-                <div className="flex flex-col gap-0.5 border-t border-secondary py-1.5">
-                    <div className="px-3 pt-1.5 pb-1 text-xs font-semibold text-tertiary">Switch account</div>
-
-                    <div className="flex flex-col gap-0.5 px-1.5">
-                        {placeholderAccounts.map((account) => (
-                            <button
-                                key={account.id}
-                                className={cx(
-                                    "relative w-full cursor-pointer rounded-md px-2 py-1.5 text-left outline-focus-ring hover:bg-primary_hover focus:z-10 focus-visible:outline-2 focus-visible:outline-offset-2",
-                                    account.id === selectedAccountId && "bg-primary_hover",
-                                )}
-                            >
-                                <AvatarLabelGroup status="online" size="md" src={account.avatar} title={account.name} subtitle={account.email} />
-
-                                <RadioButtonBase isSelected={account.id === selectedAccountId} className="absolute top-2 right-2" />
-                            </button>
-                        ))}
+                {/* User Info Card */}
+                {account && (
+                    <div className="border-b border-secondary p-3">
+                        <div className="flex items-start gap-3">
+                            <AvatarLabelGroup 
+                                status="online" 
+                                size="md" 
+                                src={account.avatar || undefined}
+                                initials={account.name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                                title={account.name} 
+                                subtitle={account.email} 
+                            />
+                        </div>
+                        <div className="mt-3 flex items-center gap-2">
+                            <Badge color={getRoleBadgeColor(account.role)} size="sm">
+                                {formatRole(account.role)}
+                            </Badge>
+                            {account.memberSince && (
+                                <div className="flex items-center gap-1 text-xs text-tertiary">
+                                    <Calendar className="size-3" />
+                                    <span>Joined {account.memberSince}</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-                <div className="flex flex-col gap-2 px-2 pt-0.5 pb-2">
-                    <Button iconLeading={Plus} color="secondary" size="sm">
-                        Add account
-                    </Button>
+                )}
+
+                <div className="flex flex-col gap-0.5 py-1.5">
+                    <NavAccountCardMenuItem 
+                        label="View profile" 
+                        icon={User01} 
+                        onClick={() => router.push("/settings?tab=profile")}
+                    />
+                    <NavAccountCardMenuItem 
+                        label="Account settings" 
+                        icon={Settings01} 
+                        onClick={() => router.push("/settings")}
+                    />
+                    <NavAccountCardMenuItem 
+                        label="Documentation" 
+                        icon={BookOpen01} 
+                        onClick={() => window.open("https://docs.protectron.ai", "_blank")}
+                    />
                 </div>
             </div>
 
             <div className="pt-1 pb-1.5">
-                <NavAccountCardMenuItem label="Sign out" icon={LogOut01} shortcut="⌥⇧Q" />
+                <NavAccountCardMenuItem 
+                    label="Sign out" 
+                    icon={LogOut01} 
+                    onClick={onSignOut}
+                />
             </div>
         </AriaDialog>
     );
@@ -156,20 +182,78 @@ const NavAccountCardMenuItem = ({
 
 export const NavAccountCard = ({
     popoverPlacement,
-    selectedAccountId = "olivia",
-    items = placeholderAccounts,
 }: {
     popoverPlacement?: Placement;
-    selectedAccountId?: string;
-    items?: NavAccountType[];
 }) => {
     const triggerRef = useRef<HTMLDivElement>(null);
     const isDesktop = useBreakpoint("lg");
+    const router = useRouter();
+    const [account, setAccount] = useState<NavAccountType | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const selectedAccount = placeholderAccounts.find((account) => account.id === selectedAccountId);
+    // Fetch user data from Supabase
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const supabase = createClient();
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    setIsLoading(false);
+                    return;
+                }
 
-    if (!selectedAccount) {
-        console.warn(`Account with ID ${selectedAccountId} not found in <NavAccountCard />`);
+                // Get profile data
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("full_name, avatar_url, role, created_at")
+                    .eq("id", user.id)
+                    .single();
+
+                // Format the join date
+                const joinDate = profile?.created_at 
+                    ? new Date(profile.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+                    : undefined;
+
+                setAccount({
+                    id: user.id,
+                    name: profile?.full_name || user.email?.split("@")[0] || "User",
+                    email: user.email || "",
+                    avatar: profile?.avatar_url || null,
+                    status: "online",
+                    role: profile?.role || "member",
+                    memberSince: joinDate,
+                });
+            } catch (err) {
+                console.error("Error fetching user data:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchUserData();
+    }, []);
+
+    // Handle sign out
+    const handleSignOut = async () => {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push("/");
+    };
+
+    if (isLoading) {
+        return (
+            <div className="relative flex items-center gap-3 rounded-xl p-3 ring-1 ring-secondary ring-inset animate-pulse">
+                <div className="h-10 w-10 rounded-full bg-secondary" />
+                <div className="flex-1 space-y-2">
+                    <div className="h-4 w-24 rounded bg-secondary" />
+                    <div className="h-3 w-32 rounded bg-secondary" />
+                </div>
+            </div>
+        );
+    }
+
+    if (!account) {
         return null;
     }
 
@@ -177,10 +261,11 @@ export const NavAccountCard = ({
         <div ref={triggerRef} className="relative flex items-center gap-3 rounded-xl p-3 ring-1 ring-secondary ring-inset">
             <AvatarLabelGroup
                 size="md"
-                src={selectedAccount.avatar}
-                title={selectedAccount.name}
-                subtitle={selectedAccount.email}
-                status={selectedAccount.status}
+                src={account.avatar || undefined}
+                initials={account.name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+                title={account.name}
+                subtitle={account.email}
+                status={account.status}
             />
 
             <div className="absolute top-1.5 right-1.5">
@@ -202,7 +287,7 @@ export const NavAccountCard = ({
                             )
                         }
                     >
-                        <NavAccountMenu selectedAccountId={selectedAccountId} accounts={items} />
+                        <NavAccountMenu account={account} onSignOut={handleSignOut} />
                     </AriaPopover>
                 </AriaDialogTrigger>
             </div>

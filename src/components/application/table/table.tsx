@@ -2,7 +2,7 @@
 
 import type { ComponentPropsWithRef, HTMLAttributes, ReactNode, Ref, TdHTMLAttributes, ThHTMLAttributes } from "react";
 import { createContext, isValidElement, useContext } from "react";
-import { ArrowDown, ChevronSelectorVertical, Copy01, Edit01, HelpCircle, Trash01 } from "@untitledui/icons";
+import { ArrowDown, ChevronSelectorVertical, Copy01, Download01, Edit01, Eye, HelpCircle, Share07, Trash01 } from "@untitledui/icons";
 import type {
     CellProps as AriaCellProps,
     ColumnProps as AriaColumnProps,
@@ -40,6 +40,52 @@ export const TableRowActionsDropdown = () => (
                     <span className="pr-4">Copy link</span>
                 </Dropdown.Item>
                 <Dropdown.Item icon={Trash01}>
+                    <span className="pr-4">Delete</span>
+                </Dropdown.Item>
+            </Dropdown.Menu>
+        </Dropdown.Popover>
+    </Dropdown.Root>
+);
+
+interface DocumentActionsDropdownProps {
+    onDownload?: () => void;
+    onView?: () => void;
+    onDuplicate?: () => void;
+    onShare?: () => void;
+    onRename?: () => void;
+    onDelete?: () => void;
+}
+
+export const DocumentActionsDropdown = ({
+    onDownload,
+    onView,
+    onDuplicate,
+    onShare,
+    onRename,
+    onDelete,
+}: DocumentActionsDropdownProps) => (
+    <Dropdown.Root>
+        <Dropdown.DotsButton />
+
+        <Dropdown.Popover className="w-min">
+            <Dropdown.Menu>
+                <Dropdown.Item icon={Download01} onAction={onDownload}>
+                    <span className="pr-4">Download</span>
+                </Dropdown.Item>
+                <Dropdown.Item icon={Eye} onAction={onView}>
+                    <span className="pr-4">View</span>
+                </Dropdown.Item>
+                <Dropdown.Item icon={Copy01} onAction={onDuplicate}>
+                    <span className="pr-4">Duplicate</span>
+                </Dropdown.Item>
+                <Dropdown.Item icon={Share07} onAction={onShare}>
+                    <span className="pr-4">Share</span>
+                </Dropdown.Item>
+                <Dropdown.Separator />
+                <Dropdown.Item icon={Edit01} onAction={onRename}>
+                    <span className="pr-4">Rename</span>
+                </Dropdown.Item>
+                <Dropdown.Item icon={Trash01} onAction={onDelete} destructive>
                     <span className="pr-4">Delete</span>
                 </Dropdown.Item>
             </Dropdown.Menu>

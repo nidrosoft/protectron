@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Key } from "react-aria-components";
 import { Button } from "@/components/base/buttons/button";
 import { Select, type SelectItemType } from "@/components/base/select/select";
@@ -45,27 +45,171 @@ const countryOptions: SelectItemType[] = [
 
 export const OrganizationSettings = () => {
   const { addToast } = useToast();
-  const [companyName, setCompanyName] = useState("Acme Corporation");
-  const [industry, setIndustry] = useState<string>("technology");
-  const [companySize, setCompanySize] = useState<string>("51-200");
-  const [country, setCountry] = useState<string>("DE");
-  const [hasEuPresence, setHasEuPresence] = useState(true);
-  const [legalName, setLegalName] = useState("Acme Corporation GmbH");
-  const [vatNumber, setVatNumber] = useState("DE123456789");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [industry, setIndustry] = useState<string>("");
+  const [companySize, setCompanySize] = useState<string>("");
+  const [country, setCountry] = useState<string>("");
+  const [hasEuPresence, setHasEuPresence] = useState(false);
+  const [legalName, setLegalName] = useState("");
+  const [vatNumber, setVatNumber] = useState("");
+  const [trustCenterEnabled, setTrustCenterEnabled] = useState(false);
+  const [orgSlug, setOrgSlug] = useState("");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  // Fetch organization data on mount
+  useEffect(() => {
+    const fetchOrganization = async () => {
+      try {
+        const response = await fetch("/api/v1/organization");
+        if (response.ok) {
+          const { data } = await response.json();
+          setCompanyName(data.name || "");
+          setIndustry(data.industry || "");
+          setCompanySize(data.company_size || "");
+          setCountry(data.country || "");
+          setHasEuPresence(data.has_eu_presence || false);
+          setLegalName(data.legal_name || "");
+          setVatNumber(data.vat_number || "");
+          setTrustCenterEnabled(data.trust_center_enabled || false);
+          setOrgSlug(data.slug || "");
+          setLogoUrl(data.logo_url || null);
+        }
+      } catch (error) {
+        console.error("Error fetching organization:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchOrganization();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Form data:", { companyName, industry, companySize, country, hasEuPresence, legalName, vatNumber });
-    addToast({
-      title: "Settings saved",
-      message: "Your organization settings have been updated successfully.",
-      type: "success",
-    });
+    setIsSaving(true);
+    
+    try {
+      const response = await fetch("/api/v1/organization", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: companyName,
+          industry,
+          company_size: companySize,
+          country,
+          has_eu_presence: hasEuPresence,
+          legal_name: legalName,
+          vat_number: vatNumber,
+          trust_center_enabled: trustCenterEnabled,
+        }),
+      });
+
+      if (response.ok) {
+        addToast({
+          title: "Settings saved",
+          message: "Your organization settings have been updated successfully.",
+          type: "success",
+        });
+      } else {
+        const { error } = await response.json();
+        addToast({
+          title: "Error",
+          message: error || "Failed to save settings.",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving organization:", error);
+      addToast({
+        title: "Error",
+        message: "Failed to save settings.",
+        type: "error",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/v1/organization/logo", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const { data } = await response.json();
+        setLogoUrl(data.logo_url);
+        addToast({
+          title: "Logo uploaded",
+          message: "Your organization logo has been updated.",
+          type: "success",
+        });
+      } else {
+        const { error } = await response.json();
+        addToast({
+          title: "Upload failed",
+          message: error || "Failed to upload logo.",
+          type: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      addToast({
+        title: "Upload failed",
+        message: "Failed to upload logo.",
+        type: "error",
+      });
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    try {
+      const response = await fetch("/api/v1/organization/logo", {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setLogoUrl(null);
+        addToast({
+          title: "Logo removed",
+          message: "Your organization logo has been removed.",
+          type: "success",
+        });
+      }
+    } catch (error) {
+      console.error("Error removing logo:", error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="px-6 py-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 w-48 bg-gray-200 rounded" />
+            <div className="h-12 w-full bg-gray-200 rounded" />
+            <div className="h-12 w-full bg-gray-200 rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-6 py-6 lg:px-8">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-6xl">
         <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
           {/* Section Header */}
           <div className="border-b border-secondary pb-5">
@@ -77,6 +221,57 @@ export const OrganizationSettings = () => {
 
           {/* Form Fields - Two column layout */}
           <div className="flex flex-col gap-5">
+            {/* Organization Logo */}
+            <div className="grid grid-cols-1 gap-1.5 lg:grid-cols-[240px_1fr] lg:gap-12">
+              <div>
+                <label className="text-sm font-medium text-secondary">Organization Logo</label>
+                <p className="mt-0.5 text-xs text-tertiary">Displayed on your Trust Center</p>
+              </div>
+              <div className="flex items-center gap-4">
+                {logoUrl ? (
+                  <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-secondary">
+                    <img
+                      src={logoUrl}
+                      alt="Organization logo"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-dashed border-secondary bg-secondary_subtle">
+                    <span className="text-2xl font-semibold text-tertiary">
+                      {companyName.charAt(0).toUpperCase() || "?"}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                      className="hidden"
+                      onChange={handleLogoUpload}
+                      disabled={isUploadingLogo}
+                    />
+                    <span className="inline-flex items-center rounded-lg border border-secondary bg-primary px-3 py-1.5 text-sm font-medium text-secondary hover:bg-secondary_subtle">
+                      {isUploadingLogo ? "Uploading..." : logoUrl ? "Change logo" : "Upload logo"}
+                    </span>
+                  </label>
+                  {logoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveLogo}
+                      className="text-xs text-error-600 hover:underline"
+                    >
+                      Remove logo
+                    </button>
+                  )}
+                  <p className="text-xs text-tertiary">PNG, JPG, WebP or SVG. Max 2MB.</p>
+                </div>
+              </div>
+            </div>
+
+            <hr className="h-px w-full border-none bg-border-secondary" />
+
             {/* Company Name */}
             <div className="grid grid-cols-1 gap-1.5 lg:grid-cols-[240px_1fr] lg:gap-12">
               <div className="lg:pt-2">
@@ -238,15 +433,52 @@ export const OrganizationSettings = () => {
                 />
               </div>
             </div>
+
+            <hr className="h-px w-full border-none bg-border-secondary" />
+
+            {/* Trust Center */}
+            <div className="grid grid-cols-1 gap-1.5 lg:grid-cols-[240px_1fr] lg:gap-12">
+              <div>
+                <label className="text-sm font-medium text-secondary">Public Trust Center</label>
+                <p className="mt-0.5 text-xs text-tertiary">Share your compliance status publicly</p>
+              </div>
+              <div>
+                <div className="flex items-center gap-3 rounded-lg border border-secondary p-4">
+                  <Checkbox
+                    isSelected={trustCenterEnabled}
+                    onChange={() => setTrustCenterEnabled(!trustCenterEnabled)}
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-primary">Enable Trust Center</p>
+                    <p className="text-xs text-tertiary">
+                      Allow customers to view your EU AI Act compliance status at a public URL.
+                    </p>
+                  </div>
+                </div>
+                {trustCenterEnabled && orgSlug && (
+                  <div className="mt-3 flex items-center gap-2 rounded-lg bg-brand-50 p-3">
+                    <span className="text-xs text-brand-700">Your Trust Center URL:</span>
+                    <a 
+                      href={`/trust-center/${orgSlug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-brand-600 hover:underline"
+                    >
+                      {typeof window !== 'undefined' ? window.location.origin : ''}/trust-center/{orgSlug}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Footer Actions */}
           <div className="flex items-center justify-end gap-3 border-t border-secondary pt-5">
-            <Button type="button" color="secondary" size="md">
+            <Button type="button" color="secondary" size="md" isDisabled={isSaving}>
               Cancel
             </Button>
-            <Button type="submit" color="primary" size="md">
-              Save
+            <Button type="submit" color="primary" size="md" isDisabled={isSaving}>
+              {isSaving ? "Saving..." : "Save"}
             </Button>
           </div>
         </form>

@@ -1,11 +1,13 @@
 "use client";
 
 import { FileIcon } from "@untitledui/file-icons";
-import { UploadCloud02, Download01 } from "@untitledui/icons";
+import { UploadCloud02, Download01, File06 } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { Table, TableCard, TableRowActionsDropdown } from "@/components/application/table/table";
 import * as Paginations from "@/components/application/pagination/pagination";
+import { EmptyState } from "@/components/application/empty-state/empty-state";
+import { useToast } from "@/components/base/toast/toast";
 
 interface Document {
   id: string;
@@ -33,6 +35,30 @@ export const DocumentsTab = ({
   itemsPerPage,
   onGenerateDocument,
 }: DocumentsTabProps) => {
+  // Show empty state when no documents
+  if (documents.length === 0) {
+    return (
+      <div className="flex h-full min-h-[400px] items-center justify-center">
+        <EmptyState size="md">
+          <EmptyState.Header pattern="grid">
+            <EmptyState.FeaturedIcon icon={File06} color="gray" theme="modern" />
+          </EmptyState.Header>
+          <EmptyState.Content>
+            <EmptyState.Title>No documents yet</EmptyState.Title>
+            <EmptyState.Description>
+              Generate compliance documents for your AI system to demonstrate EU AI Act conformity.
+            </EmptyState.Description>
+          </EmptyState.Content>
+          <EmptyState.Footer>
+            <Button size="lg" iconLeading={UploadCloud02} onClick={onGenerateDocument}>
+              Generate Document
+            </Button>
+          </EmptyState.Footer>
+        </EmptyState>
+      </div>
+    );
+  }
+
   return (
     <>
       <TableCard.Root>
@@ -42,8 +68,7 @@ export const DocumentsTab = ({
           contentTrailing={
             <div className="flex items-center gap-3">
               <Button size="md" color="secondary" iconLeading={Download01} onClick={() => {
-                console.log("Downloading all documents...");
-                alert("Download started for all documents");
+                // Download functionality would be implemented here
               }}>
                 Download all
               </Button>
