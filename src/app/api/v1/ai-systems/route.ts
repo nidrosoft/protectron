@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, getClientIdentifier, rateLimitHeaders, RATE_LIMITS } from "@/lib/security/rate-limit";
 import { validateBody, createAISystemSchema, ValidationError } from "@/lib/security/validation";
+import type { Json } from "@/lib/supabase/database.types";
 
 // GET /api/v1/ai-systems - List all AI systems for the organization
 export async function GET() {
@@ -140,7 +141,7 @@ export async function POST(request: Request) {
         serves_eu: body.serves_eu || false,
         processes_in_eu: body.processes_in_eu || false,
         established_in_eu: body.established_in_eu || false,
-        assessment_data: body.assessment_data as Record<string, unknown> | undefined,
+        assessment_data: body.assessment_data as Json | undefined,
       })
       .select()
       .single();
