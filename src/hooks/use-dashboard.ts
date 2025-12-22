@@ -187,10 +187,12 @@ export function useDashboard() {
         .limit(6);
 
       // Get documents count by type
-      const { data: documents } = await supabase
+      const { data: documents, error: documentsError } = await supabase
         .from("documents")
         .select("document_type")
         .eq("organization_id", orgId);
+
+      console.log("Documents fetch - orgId:", orgId, "documents:", documents, "error:", documentsError);
 
       // Get pending requirements (not completed)
       const { data: pendingRequirements } = await supabase

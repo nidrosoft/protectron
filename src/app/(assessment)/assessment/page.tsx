@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/base/buttons/button";
 import type { ProgressFeaturedIconType } from "@/components/application/progress-steps/progress-types";
 import { cx } from "@/utils/cx";
+import { createClient } from "@/lib/supabase/client";
 import {
   CompanyDetailsStep,
   EUPresenceStep,
@@ -19,6 +20,63 @@ export default function AssessmentPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<AssessmentData>(initialAssessmentData);
+  const [isLoadingUserData, setIsLoadingUserData] = useState(true);
+
+  // Fetch user's organization data to pre-fill company name
+  useEffect(() => {
+    const fetchUserOrganization = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          setIsLoadingUserData(false);
+          return;
+        }
+
+        // First check user metadata for company name (from signup)
+        const companyNameFromMetadata = user.user_metadata?.company_name;
+        
+        if (companyNameFromMetadata) {
+          setData(prev => ({ ...prev, companyName: companyNameFromMetadata }));
+          setIsLoadingUserData(false);
+          return;
+        }
+
+        // Otherwise, try to get from organization
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("organization_id")
+          .eq("id", user.id)
+          .single();
+
+        if (profile?.organization_id) {
+          const { data: org } = await supabase
+            .from("organizations")
+            .select("name, industry, company_size, country, has_eu_presence")
+            .eq("id", profile.organization_id)
+            .single();
+
+          if (org) {
+            setData(prev => ({
+              ...prev,
+              companyName: org.name || prev.companyName,
+              industry: org.industry || prev.industry,
+              companySize: org.company_size || prev.companySize,
+              country: org.country || prev.country,
+              hasEUOperations: org.has_eu_presence || prev.hasEUOperations,
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching user organization:", err);
+      } finally {
+        setIsLoadingUserData(false);
+      }
+    };
+
+    fetchUserOrganization();
+  }, []);
 
   // Generate progress steps with status for the official Progress component
   const progressSteps: ProgressFeaturedIconType[] = stepDefinitions.map((step) => ({
@@ -163,25 +221,39 @@ export default function AssessmentPage() {
       {/* Right Panel - Step Content (2/3 of screen) */}
       <div className="flex min-h-0 flex-col lg:col-span-2">
         {/* Step Header - Fixed at top */}
-        <div className="shrink-0 border-b border-secondary px-8 pt-8 pb-6 lg:px-12 lg:pt-10">
-          <p className="text-sm font-medium text-brand-600">
+        <div className="shrink-0 border-b border-secondary px-4 pt-6 pb-4 sm:px-8 sm:pt-8 sm:pb-6 lg:px-12 lg:pt-10">
+          {/* Mobile progress indicator */}
+          <div className="mb-4 flex items-center gap-2 lg:hidden">
+            {stepDefinitions.map((step, index) => (
+              <div
+                key={step.id}
+                className={cx(
+                  "h-1.5 flex-1 rounded-full transition-colors",
+                  index + 1 < currentStep && "bg-brand-600",
+                  index + 1 === currentStep && "bg-brand-600",
+                  index + 1 > currentStep && "bg-gray-200"
+                )}
+              />
+            ))}
+          </div>
+          <p className="text-xs font-medium text-brand-600 sm:text-sm">
             STEP {currentStep} OF {stepDefinitions.length}
           </p>
-          <h1 className="mt-2 text-display-sm font-semibold text-primary">
+          <h1 className="mt-1 text-lg font-semibold text-primary sm:mt-2 sm:text-display-sm">
             {currentStepData.title}
           </h1>
-          <p className="mt-2 text-tertiary">
+          <p className="mt-1 text-sm text-tertiary sm:mt-2 sm:text-base">
             {currentStepData.description}
           </p>
         </div>
 
         {/* Step Content - Scrollable */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-8 py-8 lg:px-12">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 lg:px-12">
           {renderStepContent()}
         </div>
 
         {/* Navigation Footer - Fixed at bottom */}
-        <div className="shrink-0 border-t border-secondary bg-primary px-8 py-6 lg:px-12">
+        <div className="shrink-0 border-t border-secondary bg-primary px-4 py-4 sm:px-8 sm:py-6 lg:px-12">
           <div className="flex justify-between">
             {currentStep > 1 ? (
               <Button

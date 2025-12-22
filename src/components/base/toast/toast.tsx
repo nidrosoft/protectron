@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, createContext, useContext, useCallback } from "react";
-import { TickCircle, CloseCircle, InfoCircle, Warning2, CloseSquare } from "iconsax-react";
+import { useState, useEffect, createContext, useContext, useCallback, type FC } from "react";
+import { CheckCircle, XCircle, AlertCircle, AlertTriangle, X } from "@untitledui/icons";
 import { cx } from "@/utils/cx";
 
 type ToastType = "success" | "error" | "info" | "warning";
@@ -50,38 +50,30 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-const toastConfig = {
+const toastConfig: Record<ToastType, {
+  icon: FC<{ className?: string }>;
+  iconBgColor: string;
+  iconColor: string;
+}> = {
   success: {
-    icon: TickCircle,
-    bgColor: "bg-success-50",
-    borderColor: "border-success-200",
+    icon: CheckCircle,
+    iconBgColor: "bg-success-100",
     iconColor: "text-success-600",
-    titleColor: "text-success-800",
-    messageColor: "text-success-700",
   },
   error: {
-    icon: CloseCircle,
-    bgColor: "bg-error-50",
-    borderColor: "border-error-200",
+    icon: XCircle,
+    iconBgColor: "bg-error-100",
     iconColor: "text-error-600",
-    titleColor: "text-error-800",
-    messageColor: "text-error-700",
   },
   info: {
-    icon: InfoCircle,
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-200",
-    iconColor: "text-blue-600",
-    titleColor: "text-blue-800",
-    messageColor: "text-blue-700",
+    icon: AlertCircle,
+    iconBgColor: "bg-brand-100",
+    iconColor: "text-brand-600",
   },
   warning: {
-    icon: Warning2,
-    bgColor: "bg-warning-50",
-    borderColor: "border-warning-200",
+    icon: AlertTriangle,
+    iconBgColor: "bg-warning-100",
     iconColor: "text-warning-600",
-    titleColor: "text-warning-800",
-    messageColor: "text-warning-700",
   },
 };
 
@@ -102,25 +94,26 @@ const ToastItem = ({
   }, [toast.duration, onRemove]);
 
   return (
-    <div
-      className={cx(
-        "flex items-start gap-3 rounded-xl border p-4 shadow-lg animate-in slide-in-from-right-full duration-300",
-        config.bgColor,
-        config.borderColor
-      )}
-    >
-      <Icon size={20} color="currentColor" className={config.iconColor} variant="Bold" />
-      <div className="flex-1 min-w-0">
-        <p className={cx("text-sm font-semibold", config.titleColor)}>{toast.title}</p>
+    <div className="flex items-start gap-4 rounded-xl border border-secondary bg-primary p-4 shadow-lg animate-in slide-in-from-right-full duration-300">
+      {/* Icon */}
+      <div className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", config.iconBgColor)}>
+        <Icon className={cx("h-5 w-5", config.iconColor)} />
+      </div>
+      
+      {/* Content */}
+      <div className="flex-1 min-w-0 pt-0.5">
+        <p className="text-sm font-semibold text-primary">{toast.title}</p>
         {toast.message && (
-          <p className={cx("mt-1 text-sm", config.messageColor)}>{toast.message}</p>
+          <p className="mt-1 text-sm text-tertiary">{toast.message}</p>
         )}
       </div>
+      
+      {/* Close button */}
       <button
         onClick={onRemove}
-        className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+        className="shrink-0 rounded-lg p-1.5 text-quaternary hover:bg-secondary hover:text-tertiary transition-colors"
       >
-        <CloseSquare size={18} color="currentColor" />
+        <X className="h-5 w-5" />
       </button>
     </div>
   );
@@ -136,7 +129,7 @@ const ToastContainer = ({
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-3 max-w-md w-full px-4 sm:px-0">
       {toasts.map((toast) => (
         <ToastItem
           key={toast.id}

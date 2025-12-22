@@ -49,37 +49,38 @@ export const AnalyzingAnimation = ({ onComplete }: AnalyzingAnimationProps) => {
   }, [onComplete, steps.length]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 py-16">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-8 sm:px-8 sm:py-16">
       <div className="w-full max-w-md text-center">
         {/* Animated icon */}
-        <div className="relative mx-auto mb-8 h-24 w-24">
+        <div className="relative mx-auto mb-6 h-20 w-20 sm:mb-8 sm:h-24 sm:w-24">
           <div className="absolute inset-0 animate-ping rounded-full bg-brand-200 opacity-20" />
           <div className="absolute inset-2 animate-pulse rounded-full bg-brand-100" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <ShieldTick size={48} color="currentColor" className="text-brand-600 animate-pulse" variant="Bold" />
+            <ShieldTick size={40} color="currentColor" className="text-brand-600 animate-pulse sm:hidden" variant="Bold" />
+            <ShieldTick size={48} color="currentColor" className="text-brand-600 animate-pulse hidden sm:block" variant="Bold" />
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold text-primary mb-2">
+        <h2 className="text-lg font-semibold text-primary mb-1 sm:text-xl sm:mb-2">
           Analyzing Your Assessment
         </h2>
-        <p className="text-tertiary mb-8">
+        <p className="text-sm text-tertiary mb-6 sm:text-base sm:mb-8">
           Please wait while we process your responses...
         </p>
 
         {/* Progress bar */}
-        <div className="mb-8">
-          <div className="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+        <div className="mb-6 sm:mb-8">
+          <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden sm:h-2">
             <div 
               className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all duration-100 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="mt-2 text-sm text-tertiary">{progress}% complete</p>
+          <p className="mt-2 text-xs text-tertiary sm:text-sm">{progress}% complete</p>
         </div>
 
         {/* Steps */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = index === currentStep;
@@ -89,26 +90,31 @@ export const AnalyzingAnimation = ({ onComplete }: AnalyzingAnimationProps) => {
               <div 
                 key={step.label}
                 className={cx(
-                  "flex items-center gap-3 rounded-xl p-3 transition-all duration-300",
+                  "flex items-center gap-2 rounded-lg p-2 transition-all duration-300 sm:gap-3 sm:rounded-xl sm:p-3",
                   isActive && "bg-brand-50 scale-105",
                   isComplete && "opacity-60",
                   !isActive && !isComplete && "opacity-40"
                 )}
               >
                 <div className={cx(
-                  "flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300",
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-300 sm:h-10 sm:w-10",
                   isActive && "bg-brand-100",
                   isComplete && "bg-success-100",
                   !isActive && !isComplete && "bg-gray-100"
                 )}>
                   {isComplete ? (
-                    <TickCircle size={20} color="currentColor" className="text-success-600" variant="Bold" />
+                    <TickCircle size={18} color="currentColor" className="text-success-600 sm:hidden" variant="Bold" />
                   ) : (
-                    <Icon size={20} color="currentColor" className={isActive ? step.color : "text-gray-400"} variant={isActive ? "Bold" : "Linear"} />
+                    <Icon size={18} color="currentColor" className={cx(isActive ? step.color : "text-gray-400", "sm:hidden")} variant={isActive ? "Bold" : "Linear"} />
+                  )}
+                  {isComplete ? (
+                    <TickCircle size={20} color="currentColor" className="text-success-600 hidden sm:block" variant="Bold" />
+                  ) : (
+                    <Icon size={20} color="currentColor" className={cx(isActive ? step.color : "text-gray-400", "hidden sm:block")} variant={isActive ? "Bold" : "Linear"} />
                   )}
                 </div>
                 <span className={cx(
-                  "font-medium transition-all duration-300",
+                  "text-sm font-medium transition-all duration-300 sm:text-base",
                   isActive && "text-primary",
                   isComplete && "text-success-600",
                   !isActive && !isComplete && "text-tertiary"
@@ -117,9 +123,9 @@ export const AnalyzingAnimation = ({ onComplete }: AnalyzingAnimationProps) => {
                 </span>
                 {isActive && (
                   <div className="ml-auto flex gap-1">
-                    <div className="h-2 w-2 rounded-full bg-brand-600 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="h-2 w-2 rounded-full bg-brand-600 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="h-2 w-2 rounded-full bg-brand-600 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <div className="h-1.5 w-1.5 rounded-full bg-brand-600 animate-bounce sm:h-2 sm:w-2" style={{ animationDelay: "0ms" }} />
+                    <div className="h-1.5 w-1.5 rounded-full bg-brand-600 animate-bounce sm:h-2 sm:w-2" style={{ animationDelay: "150ms" }} />
+                    <div className="h-1.5 w-1.5 rounded-full bg-brand-600 animate-bounce sm:h-2 sm:w-2" style={{ animationDelay: "300ms" }} />
                   </div>
                 )}
               </div>

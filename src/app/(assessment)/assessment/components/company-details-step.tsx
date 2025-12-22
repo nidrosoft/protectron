@@ -28,7 +28,7 @@ export const CompanyDetailsStep = ({ data, updateData }: CompanyDetailsStepProps
           value={data.industry}
           onChange={(value) => updateData("industry", value)}
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {industries.map((industry) => (
               <RadioButton key={industry} value={industry} label={industry} />
             ))}
@@ -42,7 +42,7 @@ export const CompanyDetailsStep = ({ data, updateData }: CompanyDetailsStepProps
           value={data.companySize}
           onChange={(value) => updateData("companySize", value)}
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {companySizes.map((size) => (
               <RadioButton key={size} value={size} label={`${size} employees`} />
             ))}
@@ -56,7 +56,7 @@ export const CompanyDetailsStep = ({ data, updateData }: CompanyDetailsStepProps
           value={data.country}
           onChange={(value) => updateData("country", value)}
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {countries.map((country) => (
               <RadioButton key={country} value={country} label={country} />
             ))}

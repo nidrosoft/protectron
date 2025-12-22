@@ -12,6 +12,7 @@ import { AvatarLabelGroup } from "@/components/base/avatar/avatar-label-group";
 import { Badge } from "@/components/base/badges/badges";
 import { useBreakpoint } from "@/hooks/use-breakpoint";
 import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/base/toast/toast";
 import { cx } from "@/utils/cx";
 
 type NavAccountType = {
@@ -188,6 +189,7 @@ export const NavAccountCard = ({
     const triggerRef = useRef<HTMLDivElement>(null);
     const isDesktop = useBreakpoint("lg");
     const router = useRouter();
+    const { addToast } = useToast();
     const [account, setAccount] = useState<NavAccountType | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -237,8 +239,25 @@ export const NavAccountCard = ({
     // Handle sign out
     const handleSignOut = async () => {
         const supabase = createClient();
-        await supabase.auth.signOut();
-        router.push("/");
+        const { error } = await supabase.auth.signOut();
+        
+        if (error) {
+            addToast({
+                title: "Sign out failed",
+                message: error.message,
+                type: "error",
+            });
+            return;
+        }
+
+        addToast({
+            title: "Signed out",
+            message: "You have been successfully signed out.",
+            type: "success",
+        });
+
+        // Force a hard refresh to clear any cached state
+        window.location.href = "/";
     };
 
     if (isLoading) {

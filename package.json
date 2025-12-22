@@ -37,6 +37,7 @@
         "@tiptap/starter-kit": "^3.13.0",
         "@untitledui/file-icons": "^0.0.9",
         "@untitledui/icons": "^0.0.19",
+        "cobe": "^0.6.5",
         "docx": "^9.5.1",
         "embla-carousel-react": "^8.6.0",
         "file-saver": "^2.0.5",

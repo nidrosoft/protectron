@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Mail01 } from "@untitledui/icons";
 import { ShieldTick } from "iconsax-react";
+import Image from "next/image";
+import { Globe } from "@/components/ui/globe";
 import { Carousel } from "@/components/application/carousel/carousel-base";
 import { CarouselIndicator } from "@/components/application/carousel/carousel.demo";
 import { Button } from "@/components/base/buttons/button";
@@ -17,17 +19,44 @@ import { useToast } from "@/components/base/toast/toast";
 type AuthMode = "signin" | "signup";
 
 const ProtectronLogo = ({ className }: { className?: string }) => (
-  <div className={cx("flex items-center gap-3", className)}>
-    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600">
-      <ShieldTick size={24} color="#fff" variant="Bold" />
-    </div>
-    <span className="text-xl font-semibold text-primary">Protectron</span>
+  <div className={cx("flex items-center", className)}>
+    <Image
+      src="/assets/images/logo-light.png"
+      alt="Protectron"
+      width={615}
+      height={126}
+      className="h-9 w-auto dark:hidden"
+      priority
+    />
+    <Image
+      src="/assets/images/logo-dark.png"
+      alt="Protectron"
+      width={615}
+      height={126}
+      className="hidden h-9 w-auto dark:block"
+      priority
+    />
   </div>
 );
 
 const ProtectronLogoMinimal = ({ className }: { className?: string }) => (
-  <div className={cx("flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600", className)}>
-    <ShieldTick size={24} color="#fff" variant="Bold" />
+  <div className={cx("flex items-center", className)}>
+    <Image
+      src="/assets/images/logo-light.png"
+      alt="Protectron"
+      width={615}
+      height={126}
+      className="h-8 w-auto dark:hidden"
+      priority
+    />
+    <Image
+      src="/assets/images/logo-dark.png"
+      alt="Protectron"
+      width={615}
+      height={126}
+      className="hidden h-8 w-auto dark:block"
+      priority
+    />
   </div>
 );
 
@@ -84,6 +113,12 @@ export function AuthPage() {
           setIsLoading(false);
           return;
         }
+
+        addToast({
+          title: "Welcome back!",
+          message: "You have successfully signed in.",
+          type: "success",
+        });
 
         router.push("/dashboard");
         router.refresh();
@@ -245,6 +280,18 @@ export function AuthPage() {
                   hint={mode === "signup" ? "Must be at least 8 characters." : undefined}
                   minLength={8}
                 />
+                {mode === "signin" && (
+                  <div className="flex justify-end">
+                    <Button
+                      color="link-color"
+                      size="sm"
+                      onClick={() => router.push("/forgot-password")}
+                      type="button"
+                    >
+                      Forgot password?
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-4">
@@ -273,7 +320,7 @@ export function AuthPage() {
         </div>
 
         <footer className="hidden justify-between p-8 pt-11 lg:flex">
-          <p className="text-sm text-tertiary">© Protectron 2024</p>
+          <p className="text-sm text-tertiary">© Protectron {new Date().getFullYear()}</p>
           <a href="mailto:support@protectron.ai" className="flex items-center gap-2 text-sm text-tertiary">
             <Mail01 className="size-4 text-fg-quaternary" />
             support@protectron.ai
@@ -281,47 +328,42 @@ export function AuthPage() {
         </footer>
       </div>
 
-      {/* Right Side - Carousel */}
-      <div className="hidden h-full bg-primary py-4 pr-4 lg:block">
-        <Carousel.Root className="relative h-full w-full items-center justify-center overflow-hidden rounded-[20px] bg-brand-section lg:flex">
-          <div className="flex w-full flex-col items-center gap-8">
-            <Carousel.Content overflowHidden={false}>
-              {carouselContent.map((item, i) => (
-                <Carousel.Item key={i} className="flex flex-col items-center gap-20">
-                  {/* Compliance Visual */}
-                  <div className="flex flex-col items-center gap-6 transition lg:scale-75 xl:scale-100">
-                    <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
-                      <ShieldTick size={48} color="#fff" variant="Bold" />
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="h-2 w-2 rounded-full bg-success-400" />
-                      <div className="h-2 w-2 rounded-full bg-warning-400" />
-                      <div className="h-2 w-2 rounded-full bg-error-400" />
-                      <div className="h-2 w-2 rounded-full bg-brand-300" />
-                    </div>
-                  </div>
-                  
-                  <div className="flex max-w-114 flex-col gap-2 text-center">
-                    <p className="text-display-xs font-semibold text-primary_on-brand">{item.title}</p>
-                    <p className="text-md font-medium text-tertiary_on-brand">{item.description}</p>
-                  </div>
-                </Carousel.Item>
-              ))}
-            </Carousel.Content>
-            
-            <div className="flex items-center justify-center gap-16">
-              <Carousel.PrevTrigger className="cursor-pointer rounded-full p-2 outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2">
-                <ChevronLeft className="size-5 text-fg-white" />
-              </Carousel.PrevTrigger>
-
-              <CarouselIndicator size="lg" />
-
-              <Carousel.NextTrigger className="cursor-pointer rounded-full p-2 outline-focus-ring transition duration-100 ease-linear focus-visible:outline-2 focus-visible:outline-offset-2">
-                <ChevronRight className="size-5 text-fg-white" />
-              </Carousel.NextTrigger>
-            </div>
+      {/* Right Side - Globe */}
+      <div className="hidden h-full bg-primary lg:block">
+        <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-primary">
+          {/* Globe Container - Positioned to align with sign in/sign up toggle */}
+          <div className="relative flex flex-1 w-full items-center justify-center pt-16">
+            <Globe className="top-4 max-w-[700px]" />
           </div>
-        </Carousel.Root>
+          
+          {/* Carousel Text at Bottom */}
+          <div className="relative z-10 w-full px-8 pb-10 bg-primary">
+            <Carousel.Root className="w-full">
+              <Carousel.Content overflowHidden={false}>
+                {carouselContent.map((item, i) => (
+                  <Carousel.Item key={i} className="flex flex-col items-center">
+                    <div className="flex max-w-md flex-col gap-2 text-center">
+                      <p className="text-display-xs font-semibold text-primary">{item.title}</p>
+                      <p className="text-md font-medium text-tertiary">{item.description}</p>
+                    </div>
+                  </Carousel.Item>
+                ))}
+              </Carousel.Content>
+              
+              <div className="mt-6 flex items-center justify-center gap-12">
+                <Carousel.PrevTrigger className="cursor-pointer rounded-full p-2 text-tertiary transition hover:bg-secondary hover:text-primary">
+                  <ChevronLeft className="size-5" />
+                </Carousel.PrevTrigger>
+
+                <CarouselIndicator size="lg" />
+
+                <Carousel.NextTrigger className="cursor-pointer rounded-full p-2 text-tertiary transition hover:bg-secondary hover:text-primary">
+                  <ChevronRight className="size-5" />
+                </Carousel.NextTrigger>
+              </div>
+            </Carousel.Root>
+          </div>
+        </div>
       </div>
     </section>
   );
