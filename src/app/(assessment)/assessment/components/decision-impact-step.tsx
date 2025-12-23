@@ -34,7 +34,7 @@ export const DecisionImpactStep = ({ data, updateData }: DecisionImpactStepProps
                 "flex items-start gap-4 rounded-xl border p-4 cursor-pointer transition-colors",
                 data.decisionImpact === option.value
                   ? "border-brand-500 bg-brand-50"
-                  : "border-secondary hover:bg-secondary"
+                  : "border-secondary bg-primary hover:bg-secondary"
               )}
             >
               <Checkbox
@@ -43,14 +43,20 @@ export const DecisionImpactStep = ({ data, updateData }: DecisionImpactStepProps
               />
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-primary">{option.label}</p>
+                  <p className={cx(
+                    "font-semibold",
+                    data.decisionImpact === option.value ? "text-gray-900" : "text-primary"
+                  )}>{option.label}</p>
                   {option.badge && (
                     <span className="rounded-full bg-error-100 px-2 py-0.5 text-xs font-medium text-error-700">
                       {option.badge}
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-tertiary">{option.desc}</p>
+                <p className={cx(
+                  "mt-1 text-sm",
+                  data.decisionImpact === option.value ? "text-gray-600" : "text-tertiary"
+                )}>{option.desc}</p>
               </div>
             </label>
           ))}
@@ -71,7 +77,7 @@ export const DecisionImpactStep = ({ data, updateData }: DecisionImpactStepProps
                 "flex items-start gap-4 rounded-xl border p-4 cursor-pointer transition-colors",
                 data.automationLevel === option.value
                   ? "border-brand-500 bg-brand-50"
-                  : "border-secondary hover:bg-secondary"
+                  : "border-secondary bg-primary hover:bg-secondary"
               )}
             >
               <Checkbox
@@ -80,14 +86,20 @@ export const DecisionImpactStep = ({ data, updateData }: DecisionImpactStepProps
               />
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-primary">{option.label}</p>
+                  <p className={cx(
+                    "font-semibold",
+                    data.automationLevel === option.value ? "text-gray-900" : "text-primary"
+                  )}>{option.label}</p>
                   {option.badge && (
                     <span className="rounded-full bg-error-100 px-2 py-0.5 text-xs font-medium text-error-700">
                       {option.badge}
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-tertiary">{option.desc}</p>
+                <p className={cx(
+                  "mt-1 text-sm",
+                  data.automationLevel === option.value ? "text-gray-600" : "text-tertiary"
+                )}>{option.desc}</p>
               </div>
             </label>
           ))}

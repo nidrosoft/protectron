@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { SlideoutMenu } from "./slideout-menu";
 import { Button } from "@/components/base/buttons/button";
 import { createClient } from "@/lib/supabase/client";
@@ -13,6 +14,7 @@ import {
   SecuritySafe, 
   Card, 
   Notification,
+  Cpu,
 } from "iconsax-react";
 import { cx } from "@/utils/cx";
 import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
@@ -39,6 +41,14 @@ interface NotificationItem {
   metadata: Record<string, unknown>;
   created_at: string;
   is_read?: boolean;
+}
+
+interface AISystemAlert {
+  id: string;
+  name: string;
+  risk_level: string;
+  compliance_status: string | null;
+  created_at: string | null;
 }
 
 interface NotificationsSlideoutProps {
@@ -69,6 +79,8 @@ const getNotificationIcon = (type: string) => {
     case "billing-payment-success":
     case "billing-payment-failed":
       return <Card {...iconProps} />;
+    case "ai-system-action":
+      return <Cpu {...iconProps} />;
     default:
       return <Notification {...iconProps} />;
   }
@@ -79,6 +91,7 @@ const getNotificationColor = (type: string): string => {
     case "incident-created":
     case "security-alert":
     case "billing-payment-failed":
+    case "ai-system-action":
       return "bg-error-50 text-error-600";
     case "incident-resolved":
     case "billing-payment-success":
@@ -101,7 +114,9 @@ const formatNotificationType = (type: string): string => {
 };
 
 export const NotificationsSlideout = ({ isOpen, onOpenChange }: NotificationsSlideoutProps) => {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [aiSystemAlerts, setAISystemAlerts] = useState<AISystemAlert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const supabase = createClient();
@@ -111,6 +126,14 @@ export const NotificationsSlideout = ({ isOpen, onOpenChange }: NotificationsSli
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get user's organization
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("organization_id")
+        .eq("id", user.id)
+        .single();
+
+      // Fetch regular notifications
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("notification_log")
@@ -121,10 +144,21 @@ export const NotificationsSlideout = ({ isOpen, onOpenChange }: NotificationsSli
 
       if (error) {
         console.error("Error fetching notifications:", error);
-        return;
+      } else {
+        setNotifications(data || []);
       }
 
-      setNotifications(data || []);
+      // Fetch AI systems that need attention (not started)
+      if (profile?.organization_id) {
+        const { data: systems } = await supabase
+          .from("ai_systems")
+          .select("id, name, risk_level, compliance_status, created_at")
+          .eq("organization_id", profile.organization_id)
+          .or("compliance_status.eq.not_started,compliance_status.is.null")
+          .order("created_at", { ascending: false });
+
+        setAISystemAlerts(systems || []);
+      }
     } catch (err) {
       console.error("Error:", err);
     } finally {
@@ -156,6 +190,12 @@ export const NotificationsSlideout = ({ isOpen, onOpenChange }: NotificationsSli
     : notifications;
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+  const totalAlerts = unreadCount + aiSystemAlerts.length;
+
+  const handleAISystemClick = (systemId: string) => {
+    onOpenChange(false);
+    router.push(`/ai-systems/${systemId}`);
+  };
 
   return (
     <SlideoutMenu.Trigger isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -166,9 +206,9 @@ export const NotificationsSlideout = ({ isOpen, onOpenChange }: NotificationsSli
         >
           <div className="flex items-center justify-between pr-8">
             <h1 className="text-md font-semibold text-primary md:text-lg">Notifications</h1>
-            {unreadCount > 0 && (
+            {totalAlerts > 0 && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-error-500 px-1.5 text-xs font-medium text-white">
-                {unreadCount}
+                {totalAlerts}
               </span>
             )}
           </div>
@@ -208,7 +248,7 @@ export const NotificationsSlideout = ({ isOpen, onOpenChange }: NotificationsSli
             <div className="flex items-center justify-center py-12">
               <LoadingIndicator type="dot-circle" size="md" label="Loading notifications..." />
             </div>
-          ) : filteredNotifications.length === 0 ? (
+          ) : (filteredNotifications.length === 0 && aiSystemAlerts.length === 0) ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
                 <Notification size={24} color="currentColor" className="text-gray-400" />
@@ -224,6 +264,69 @@ export const NotificationsSlideout = ({ isOpen, onOpenChange }: NotificationsSli
             </div>
           ) : (
             <div className="flex flex-col">
+              {/* AI System Alerts - Action Required */}
+              {aiSystemAlerts.length > 0 && (
+                <>
+                  <div className="px-0 py-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-error-600">
+                      Action Required ({aiSystemAlerts.length})
+                    </p>
+                  </div>
+                  {aiSystemAlerts.map((system, index) => (
+                    <div key={system.id}>
+                      <button
+                        type="button"
+                        onClick={() => handleAISystemClick(system.id)}
+                        className="flex w-full gap-3 py-4 text-left transition-colors hover:bg-secondary"
+                      >
+                        {/* Icon */}
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-error-50 text-error-600">
+                          <Cpu size={20} color="currentColor" />
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-medium text-primary line-clamp-2">
+                              {system.name} needs compliance setup
+                            </p>
+                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-error-500" />
+                          </div>
+                          <p className="mt-0.5 text-xs text-tertiary line-clamp-2">
+                            This {system.risk_level} risk AI system requires documentation, risk assessment, and compliance tracking to meet EU AI Act requirements.
+                          </p>
+                          <div className="mt-1.5 flex items-center gap-2">
+                            <span className={cx(
+                              "rounded-full px-2 py-0.5 text-xs font-medium",
+                              system.risk_level === "high" ? "bg-error-100 text-error-700" :
+                              system.risk_level === "limited" ? "bg-warning-100 text-warning-700" :
+                              "bg-success-100 text-success-700"
+                            )}>
+                              {system.risk_level.charAt(0).toUpperCase() + system.risk_level.slice(1)} Risk
+                            </span>
+                            <span className="text-xs text-quaternary">•</span>
+                            <span className="text-xs text-tertiary">
+                              {system.created_at ? formatTimeAgo(system.created_at) : "Recently"}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                      {(index !== aiSystemAlerts.length - 1 || filteredNotifications.length > 0) && (
+                        <hr className="h-px w-full border-none bg-border-secondary" />
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Regular Notifications */}
+              {filteredNotifications.length > 0 && aiSystemAlerts.length > 0 && (
+                <div className="px-0 py-2 mt-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-tertiary">
+                    Other Notifications
+                  </p>
+                </div>
+              )}
               {filteredNotifications.map((notification, index) => (
                 <div key={notification.id}>
                   <div 

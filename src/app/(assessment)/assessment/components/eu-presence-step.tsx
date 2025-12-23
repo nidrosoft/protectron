@@ -27,43 +27,61 @@ export const EUPresenceStep = ({ data, updateData }: EUPresenceStepProps) => {
       <div className="space-y-4">
         <label className={cx(
           "flex items-start gap-4 rounded-xl border p-5 cursor-pointer transition-colors",
-          data.hasEUCustomers ? "border-brand-500 bg-brand-50" : "border-secondary hover:bg-secondary"
+          data.hasEUCustomers ? "border-brand-500 bg-brand-50" : "border-secondary bg-primary hover:bg-secondary"
         )}>
           <Checkbox
             isSelected={data.hasEUCustomers}
             onChange={(checked) => updateData("hasEUCustomers", checked)}
           />
           <div>
-            <p className="font-semibold text-primary">EU Customers or Users</p>
-            <p className="mt-1 text-sm text-tertiary">Your products or services are used by individuals or businesses located in any EU member state, including through online platforms or digital services.</p>
+            <p className={cx(
+              "font-semibold",
+              data.hasEUCustomers ? "text-gray-900" : "text-primary"
+            )}>EU Customers or Users</p>
+            <p className={cx(
+              "mt-1 text-sm",
+              data.hasEUCustomers ? "text-gray-600" : "text-tertiary"
+            )}>Your products or services are used by individuals or businesses located in any EU member state, including through online platforms or digital services.</p>
           </div>
         </label>
 
         <label className={cx(
           "flex items-start gap-4 rounded-xl border p-5 cursor-pointer transition-colors",
-          data.hasEUOperations ? "border-brand-500 bg-brand-50" : "border-secondary hover:bg-secondary"
+          data.hasEUOperations ? "border-brand-500 bg-brand-50" : "border-secondary bg-primary hover:bg-secondary"
         )}>
           <Checkbox
             isSelected={data.hasEUOperations}
             onChange={(checked) => updateData("hasEUOperations", checked)}
           />
           <div>
-            <p className="font-semibold text-primary">EU Business Operations</p>
-            <p className="mt-1 text-sm text-tertiary">You have offices, subsidiaries, employees, or any form of business establishment within the European Union.</p>
+            <p className={cx(
+              "font-semibold",
+              data.hasEUOperations ? "text-gray-900" : "text-primary"
+            )}>EU Business Operations</p>
+            <p className={cx(
+              "mt-1 text-sm",
+              data.hasEUOperations ? "text-gray-600" : "text-tertiary"
+            )}>You have offices, subsidiaries, employees, or any form of business establishment within the European Union.</p>
           </div>
         </label>
 
         <label className={cx(
           "flex items-start gap-4 rounded-xl border p-5 cursor-pointer transition-colors",
-          data.processesEUData ? "border-brand-500 bg-brand-50" : "border-secondary hover:bg-secondary"
+          data.processesEUData ? "border-brand-500 bg-brand-50" : "border-secondary bg-primary hover:bg-secondary"
         )}>
           <Checkbox
             isSelected={data.processesEUData}
             onChange={(checked) => updateData("processesEUData", checked)}
           />
           <div>
-            <p className="font-semibold text-primary">EU Data Processing</p>
-            <p className="mt-1 text-sm text-tertiary">Your AI systems process personal data of EU residents, regardless of where the processing takes place. This includes data collected through websites, apps, or third-party services.</p>
+            <p className={cx(
+              "font-semibold",
+              data.processesEUData ? "text-gray-900" : "text-primary"
+            )}>EU Data Processing</p>
+            <p className={cx(
+              "mt-1 text-sm",
+              data.processesEUData ? "text-gray-600" : "text-tertiary"
+            )}>Your AI systems process personal data of EU residents, regardless of where the processing takes place. This includes data collected through websites, apps, or third-party services.</p>
           </div>
         </label>
       </div>

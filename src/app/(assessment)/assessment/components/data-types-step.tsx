@@ -32,7 +32,7 @@ export const DataTypesStep = ({ data, toggleArrayItem }: DataTypesStepProps) => 
               "flex items-start gap-4 rounded-xl border p-4 cursor-pointer transition-colors",
               data.dataTypes.includes(dataType.id)
                 ? "border-brand-500 bg-brand-50"
-                : "border-secondary hover:bg-secondary"
+                : "border-secondary bg-primary hover:bg-secondary"
             )}
           >
             <Checkbox
@@ -41,14 +41,20 @@ export const DataTypesStep = ({ data, toggleArrayItem }: DataTypesStepProps) => 
             />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-semibold text-primary">{dataType.label}</p>
+                <p className={cx(
+                  "font-semibold",
+                  data.dataTypes.includes(dataType.id) ? "text-gray-900" : "text-primary"
+                )}>{dataType.label}</p>
                 {dataType.risk === "high" && (
                   <span className="rounded-full bg-error-100 px-2 py-0.5 text-xs font-medium text-error-700">
                     Sensitive
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-sm text-tertiary">{dataType.desc}</p>
+              <p className={cx(
+                "mt-1 text-sm",
+                data.dataTypes.includes(dataType.id) ? "text-gray-600" : "text-tertiary"
+              )}>{dataType.desc}</p>
             </div>
           </label>
         ))}

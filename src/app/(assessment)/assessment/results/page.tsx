@@ -205,8 +205,8 @@ export default function AssessmentResultsPage() {
                   <Cpu size={18} color="currentColor" className="text-brand-600 sm:hidden" variant="Bold" />
                   <Cpu size={20} color="currentColor" className="text-brand-600 hidden sm:block" variant="Bold" />
                 </div>
-                <p className="text-xl font-bold text-primary sm:text-2xl">{totalSystems}</p>
-                <p className="text-xs text-tertiary sm:text-sm">AI Systems</p>
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">{totalSystems}</p>
+                <p className="text-xs text-gray-600 sm:text-sm">AI Systems</p>
               </div>
               
               <div className="rounded-lg bg-white p-3 shadow-sm border border-gray-100 sm:rounded-xl sm:p-4">
@@ -214,10 +214,10 @@ export default function AssessmentResultsPage() {
                   <Warning2 size={18} color="currentColor" className="text-warning-600 sm:hidden" variant="Bold" />
                   <Warning2 size={20} color="currentColor" className="text-warning-600 hidden sm:block" variant="Bold" />
                 </div>
-                <p className="text-xl font-bold text-primary sm:text-2xl">
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">
                   {results.find(r => r.level === "high")?.count || 0}
                 </p>
-                <p className="text-xs text-tertiary sm:text-sm">High Risk</p>
+                <p className="text-xs text-gray-600 sm:text-sm">High Risk</p>
               </div>
               
               <div className="rounded-lg bg-white p-3 shadow-sm border border-gray-100 sm:rounded-xl sm:p-4">
@@ -225,10 +225,10 @@ export default function AssessmentResultsPage() {
                   <InfoCircle size={18} color="currentColor" className="text-blue-600 sm:hidden" variant="Bold" />
                   <InfoCircle size={20} color="currentColor" className="text-blue-600 hidden sm:block" variant="Bold" />
                 </div>
-                <p className="text-xl font-bold text-primary sm:text-2xl">
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">
                   {results.find(r => r.level === "limited")?.count || 0}
                 </p>
-                <p className="text-xs text-tertiary sm:text-sm">Limited Risk</p>
+                <p className="text-xs text-gray-600 sm:text-sm">Limited Risk</p>
               </div>
               
               <div className="rounded-lg bg-white p-3 shadow-sm border border-gray-100 sm:rounded-xl sm:p-4">
@@ -236,10 +236,10 @@ export default function AssessmentResultsPage() {
                   <TickCircle size={18} color="currentColor" className="text-success-600 sm:hidden" variant="Bold" />
                   <TickCircle size={20} color="currentColor" className="text-success-600 hidden sm:block" variant="Bold" />
                 </div>
-                <p className="text-xl font-bold text-primary sm:text-2xl">
+                <p className="text-xl font-bold text-gray-900 sm:text-2xl">
                   {results.find(r => r.level === "minimal")?.count || 0}
                 </p>
-                <p className="text-xs text-tertiary sm:text-sm">Minimal Risk</p>
+                <p className="text-xs text-gray-600 sm:text-sm">Minimal Risk</p>
               </div>
             </div>
           </div>

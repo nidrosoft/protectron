@@ -51,7 +51,37 @@ const createIcon = (IconComponent: IconSaxIcon): FC<HTMLAttributes<HTMLOrSVGElem
   return WrappedIcon;
 };
 
-const getNavItems = (incidentsCount: number): NavItemType[] => [
+interface AISystemsStats {
+  total: number;
+  notStarted: number;
+  inProgress: number;
+  compliant: number;
+}
+
+const getAISystemsBadge = (stats: AISystemsStats): React.ReactNode => {
+  if (stats.total === 0) return undefined;
+  
+  // Determine color based on status
+  // Red = not started (needs immediate attention)
+  // Orange = in progress (needs work)
+  // Green = all compliant
+  let bgColor = "bg-success-500"; // green
+  let textColor = "text-white";
+  
+  if (stats.notStarted > 0) {
+    bgColor = "bg-error-500"; // red
+  } else if (stats.inProgress > 0) {
+    bgColor = "bg-warning-500"; // orange
+  }
+  
+  return (
+    <span className={cx("ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold", bgColor, textColor)}>
+      {stats.total}
+    </span>
+  );
+};
+
+const getNavItems = (incidentsCount: number, aiSystemsStats: AISystemsStats): NavItemType[] => [
   {
     label: "Dashboard",
     href: "/dashboard",
@@ -61,6 +91,7 @@ const getNavItems = (incidentsCount: number): NavItemType[] => [
     label: "AI Systems",
     href: "/ai-systems",
     icon: createIcon(Cpu),
+    badge: getAISystemsBadge(aiSystemsStats),
     items: [
       { label: "All Systems", href: "/ai-systems" },
       { label: "Agents", href: "/ai-systems?type=ai_agent" },
@@ -124,13 +155,19 @@ export default function DashboardLayout({
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [complianceScore, setComplianceScore] = useState(0);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [aiSystemsStats, setAISystemsStats] = useState<AISystemsStats>({
+    total: 0,
+    notStarted: 0,
+    inProgress: 0,
+    compliant: 0,
+  });
   const supabase = createClient();
   
   // Fetch incidents count for sidebar badge
   const { incidents } = useIncidents();
-  const navItems = useMemo(() => getNavItems(incidents.length), [incidents.length]);
+  const navItems = useMemo(() => getNavItems(incidents.length, aiSystemsStats), [incidents.length, aiSystemsStats]);
 
-  // Fetch compliance score from AI systems
+  // Fetch compliance score and AI systems stats
   const fetchComplianceScore = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -145,16 +182,28 @@ export default function DashboardLayout({
 
       if (!profile?.organization_id) return;
 
-      // Get all AI systems for this organization and calculate average compliance
+      // Get all AI systems for this organization with compliance status
       const { data: systems } = await supabase
         .from("ai_systems")
-        .select("compliance_progress")
+        .select("compliance_progress, compliance_status")
         .eq("organization_id", profile.organization_id);
 
       if (systems && systems.length > 0) {
         const totalProgress = systems.reduce((sum, s) => sum + (s.compliance_progress || 0), 0);
         const avgProgress = Math.round(totalProgress / systems.length);
         setComplianceScore(avgProgress);
+
+        // Calculate AI systems stats for sidebar badge
+        const notStarted = systems.filter(s => s.compliance_status === "not_started" || (!s.compliance_status && (s.compliance_progress || 0) === 0)).length;
+        const compliant = systems.filter(s => s.compliance_status === "compliant" || (s.compliance_progress || 0) === 100).length;
+        const inProgress = systems.length - notStarted - compliant;
+
+        setAISystemsStats({
+          total: systems.length,
+          notStarted,
+          inProgress,
+          compliant,
+        });
       }
     } catch (err) {
       console.error("Error fetching compliance score:", err);
@@ -289,11 +338,10 @@ export default function DashboardLayout({
               aria-label="Notifications"
             >
               <Notification size={20} color="currentColor" />
-              {/* Notification badge */}
-              {unreadNotificationCount > 0 && (
-                <span className="absolute top-0 right-0 flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-error-400 opacity-75" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-error-500 ring-2 ring-white" />
+              {/* Notification badge with count */}
+              {(unreadNotificationCount > 0 || aiSystemsStats.notStarted > 0) && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-error-500 px-1 text-xs font-semibold text-white ring-2 ring-white">
+                  {unreadNotificationCount + aiSystemsStats.notStarted}
                 </span>
               )}
             </button>
