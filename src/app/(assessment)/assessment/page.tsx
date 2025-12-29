@@ -138,9 +138,9 @@ export default function AssessmentPage() {
   return (
     <div className="grid h-full min-h-0 lg:grid-cols-3">
       {/* Left Panel - Progress Steps (1/3 of screen) - Fixed */}
-      <aside className="hidden min-h-0 overflow-y-auto border-r border-secondary bg-secondary_subtle px-8 py-10 lg:block">
+      <aside className="hidden min-h-0 overflow-y-auto border-r border-secondary bg-secondary_subtle px-8 py-8 lg:flex lg:flex-col">
         {/* Header Section */}
-        <div className="mb-10">
+        <div className="mb-6 shrink-0">
           <h2 className="text-lg font-semibold text-primary">
             EU AI Act Compliance Assessment
           </h2>
@@ -153,7 +153,7 @@ export default function AssessmentPage() {
         </div>
         
         {/* Custom stepper matching screenshot design */}
-        <div className="space-y-1">
+        <div className="flex flex-col justify-between flex-1">
           {progressSteps.map((step, index) => {
             const isComplete = step.status === "complete";
             const isCurrent = step.status === "current";
@@ -161,52 +161,52 @@ export default function AssessmentPage() {
             const Icon = step.icon;
             
             return (
-              <div key={step.title} className="relative">
-                {/* Connector line */}
+              <div key={step.title} className="relative flex-1">
+                {/* Connector line - positioned to connect icon centers */}
                 {!isLast && (
                   <div
                     className={cx(
-                      "absolute left-6 top-14 h-full w-0.5",
-                      isComplete ? "bg-brand-600" : "bg-border-secondary"
+                      "absolute left-[18px] top-[48px] bottom-0 w-0.5",
+                      isComplete ? "bg-brand-600" : "bg-border-secondary dark:bg-gray-700"
                     )}
                   />
                 )}
                 
                 <div className="flex items-start gap-4 py-3">
-                  {/* Icon */}
+                  {/* Icon - smaller and rounded */}
                   <div
                     className={cx(
-                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
-                      isComplete && "bg-brand-100",
-                      isCurrent && "bg-brand-100 ring-2 ring-brand-600 ring-offset-2 ring-offset-secondary_subtle",
-                      !isComplete && !isCurrent && "bg-primary border border-secondary"
+                      "relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                      isComplete && "bg-brand-100 dark:bg-brand-900/30",
+                      isCurrent && "bg-brand-100 dark:bg-brand-900/30 ring-2 ring-brand-600 ring-offset-2 ring-offset-secondary_subtle dark:ring-offset-gray-900",
+                      !isComplete && !isCurrent && "bg-primary dark:bg-gray-800 border border-secondary dark:border-gray-700"
                     )}
                   >
                     {Icon && (
                       <Icon
                         className={cx(
-                          "h-6 w-6",
+                          "h-4 w-4",
                           isComplete && "text-brand-600",
                           isCurrent && "text-brand-600",
-                          !isComplete && !isCurrent && "text-fg-quaternary"
+                          !isComplete && !isCurrent && "text-fg-quaternary dark:text-gray-500"
                         )}
                       />
                     )}
                   </div>
                   
                   {/* Text */}
-                  <div className="flex-1 pt-0.5">
+                  <div className="flex-1">
                     <p
                       className={cx(
-                        "text-md font-semibold",
-                        (isComplete || isCurrent) ? "text-primary" : "text-tertiary"
+                        "text-sm font-semibold",
+                        (isComplete || isCurrent) ? "text-primary dark:text-white" : "text-tertiary dark:text-gray-400"
                       )}
                     >
                       {step.title}
                     </p>
                     <p className={cx(
-                      "mt-0.5 text-sm leading-relaxed",
-                      isCurrent ? "text-tertiary" : "text-quaternary"
+                      "mt-1 text-xs leading-relaxed",
+                      isCurrent ? "text-tertiary dark:text-gray-400" : "text-quaternary dark:text-gray-500"
                     )}>
                       {step.description}
                     </p>

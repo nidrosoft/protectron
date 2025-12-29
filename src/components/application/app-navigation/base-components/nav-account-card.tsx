@@ -134,7 +134,7 @@ export const NavAccountMenu = ({
                     <NavAccountCardMenuItem 
                         label="Documentation" 
                         icon={BookOpen01} 
-                        onClick={() => window.open("https://docs.protectron.ai", "_blank")}
+                        onClick={() => window.open("https://protectron.ai/docs/quickstart", "_blank")}
                     />
                 </div>
             </div>

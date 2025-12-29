@@ -29,6 +29,7 @@ import {
 } from "./data/risk-calculator";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/base/toast/toast";
+import jsPDF from "jspdf";
 
 export default function AssessmentResultsPage() {
   const router = useRouter();
@@ -61,6 +62,248 @@ export default function AssessmentResultsPage() {
     setIsAnalyzing(false);
     setTimeout(() => setShowContent(true), 100);
   }, []);
+
+  const handleDownloadReport = () => {
+    if (!data) return;
+    
+    // Create PDF document
+    const pdf = new jsPDF();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentWidth = pageWidth - (margin * 2);
+    let y = margin;
+
+    // Brand colors (RGB)
+    const brandPurple: [number, number, number] = [127, 86, 217];
+    const gray: [number, number, number] = [102, 112, 133];
+    const darkGray: [number, number, number] = [52, 64, 84];
+    const lightPurple: [number, number, number] = [249, 245, 255];
+
+    const formatDate = () => new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    // Helper to add new page if needed
+    const checkPageBreak = (neededHeight: number) => {
+      if (y + neededHeight > pageHeight - margin) {
+        pdf.addPage();
+        y = margin;
+        addHeader();
+      }
+    };
+
+    // Add header to each page
+    const addHeader = () => {
+      pdf.setFontSize(8);
+      pdf.setTextColor(...gray);
+      pdf.text("EU AI Act Compliance Assessment  |  Confidential", pageWidth - margin, 10, { align: "right" });
+    };
+
+    // Add footer to each page
+    const addFooter = (pageNum: number, totalPages: number) => {
+      pdf.setFontSize(8);
+      pdf.setTextColor(...gray);
+      pdf.text(`Protectron Inc.  |  Page ${pageNum} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: "center" });
+    };
+
+    // Title page
+    y = 80;
+    pdf.setFontSize(28);
+    pdf.setTextColor(...brandPurple);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("EU AI Act Compliance", pageWidth / 2, y, { align: "center" });
+    y += 12;
+    pdf.text("Assessment Report", pageWidth / 2, y, { align: "center" });
+    
+    y += 20;
+    pdf.setFontSize(14);
+    pdf.setTextColor(...gray);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`Assessment Report for ${data.companyName || "Your Organization"}`, pageWidth / 2, y, { align: "center" });
+    
+    y += 30;
+    pdf.setFontSize(12);
+    pdf.setTextColor(...darkGray);
+    pdf.setFont("helvetica", "bold");
+    pdf.text(formatDate(), pageWidth / 2, y, { align: "center" });
+    
+    y += 20;
+    pdf.setFontSize(10);
+    pdf.setTextColor(...gray);
+    pdf.setFont("helvetica", "normal");
+    pdf.text("Prepared by: Protectron Inc.", pageWidth / 2, y, { align: "center" });
+    
+    y += 8;
+    pdf.setFont("helvetica", "italic");
+    pdf.text("Generated via Protectron - EU AI Act Compliance Platform", pageWidth / 2, y, { align: "center" });
+
+    // New page for content
+    pdf.addPage();
+    y = margin;
+    addHeader();
+
+    // Section helper
+    const addSection = (title: string, sectionNum: number) => {
+      checkPageBreak(20);
+      pdf.setFontSize(14);
+      pdf.setTextColor(...brandPurple);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(`${sectionNum}. ${title}`, margin, y);
+      y += 10;
+    };
+
+    // Paragraph helper
+    const addParagraph = (text: string) => {
+      pdf.setFontSize(10);
+      pdf.setTextColor(...darkGray);
+      pdf.setFont("helvetica", "normal");
+      const lines = pdf.splitTextToSize(text, contentWidth);
+      checkPageBreak(lines.length * 5 + 5);
+      pdf.text(lines, margin, y);
+      y += lines.length * 5 + 5;
+    };
+
+    // Table helper
+    const addTable = (items: { key: string; value: string }[]) => {
+      const rowHeight = 8;
+      const col1Width = 50;
+      const col2Width = contentWidth - col1Width;
+      
+      checkPageBreak((items.length + 1) * rowHeight + 10);
+      
+      // Header row
+      pdf.setFillColor(...brandPurple);
+      pdf.rect(margin, y, contentWidth, rowHeight, "F");
+      pdf.setFontSize(9);
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Property", margin + 3, y + 5.5);
+      pdf.text("Value", margin + col1Width + 3, y + 5.5);
+      y += rowHeight;
+      
+      // Data rows
+      items.forEach((item, index) => {
+        if (index % 2 === 1) {
+          pdf.setFillColor(...lightPurple);
+          pdf.rect(margin, y, contentWidth, rowHeight, "F");
+        }
+        
+        // Border
+        pdf.setDrawColor(228, 231, 236);
+        pdf.rect(margin, y, col1Width, rowHeight);
+        pdf.rect(margin + col1Width, y, col2Width, rowHeight);
+        
+        pdf.setFontSize(9);
+        pdf.setTextColor(...darkGray);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(item.key, margin + 3, y + 5.5);
+        
+        // Handle long values
+        const valueLines = pdf.splitTextToSize(item.value, col2Width - 6);
+        pdf.text(valueLines[0], margin + col1Width + 3, y + 5.5);
+        
+        y += rowHeight;
+      });
+      y += 8;
+    };
+
+    // 1. Executive Summary
+    addSection("Executive Summary", 1);
+    addParagraph(`This compliance assessment report provides an overview of ${data.companyName || "your organization"}'s AI systems and their compliance status under the EU AI Act. Based on the information provided, we have identified ${totalSystems} AI system(s) that require compliance attention.`);
+    addParagraph(`Your current compliance readiness score is ${complianceScore}%. ${hasEUExposure ? "As your organization has EU exposure through customers, operations, or data processing, you are subject to EU AI Act requirements." : "Based on your responses, your EU exposure level has been assessed."}`);
+    y += 5;
+
+    // 2. Company Information
+    addSection("Company Information", 2);
+    addTable([
+      { key: "Company Name", value: data.companyName || "Not provided" },
+      { key: "Industry", value: data.industry || "Not provided" },
+      { key: "Company Size", value: data.companySize || "Not provided" },
+      { key: "Country", value: data.country || "Not provided" },
+    ]);
+
+    // 3. EU Presence Assessment
+    addSection("EU Presence Assessment", 3);
+    addTable([
+      { key: "EU Operations", value: data.hasEUOperations ? "Yes" : "No" },
+      { key: "EU Customers", value: data.hasEUCustomers ? "Yes" : "No" },
+      { key: "Processes EU Data", value: data.processesEUData ? "Yes" : "No" },
+      { key: "EU AI Act Applies", value: hasEUExposure ? "Yes - Compliance Required" : "Limited Applicability" },
+    ]);
+
+    // 4. Compliance Readiness Score
+    addSection("Compliance Readiness Score", 4);
+    addParagraph(`Based on your assessment responses, your organization's compliance readiness score is ${complianceScore}%.`);
+    const scoreMessage = complianceScore >= 70 
+      ? "Your organization shows good compliance readiness. Continue monitoring and maintaining your compliance posture." 
+      : complianceScore >= 40 
+        ? "Your organization has moderate compliance readiness. We recommend addressing the identified gaps to improve your compliance posture." 
+        : "Your organization requires significant compliance improvements. Immediate action is recommended to address compliance gaps.";
+    addParagraph(scoreMessage);
+    y += 5;
+
+    // 5. AI Systems Risk Classification
+    addSection("AI Systems Risk Classification", 5);
+    addParagraph(`We have identified ${totalSystems} AI system(s) across the following risk categories:`);
+    addTable(results.map(r => ({
+      key: r.label,
+      value: `${r.count} system(s) - ${r.description}`,
+    })));
+
+    // 6. Key Compliance Deadlines
+    addSection("Key Compliance Deadlines", 6);
+    addParagraph("The EU AI Act establishes the following key compliance deadlines:");
+    addTable([
+      { key: "August 2, 2025", value: "Prohibited AI practices must stop" },
+      { key: "August 2, 2026", value: "High-risk AI systems must be compliant" },
+      { key: "August 2, 2027", value: "All AI systems must be fully compliant" },
+    ]);
+
+    // 7. Recommended Next Steps
+    addSection("Recommended Next Steps", 7);
+    addParagraph("Based on this assessment, we recommend the following actions:");
+    const recommendations = [
+      "1. Register all identified AI systems in the Protectron compliance platform",
+      "2. Complete detailed risk assessments for each high-risk AI system",
+      "3. Generate required compliance documentation (Technical Documentation, Risk Assessments, Data Governance Policies)",
+      "4. Implement necessary technical and organizational controls",
+      "5. Establish ongoing monitoring and review processes",
+      "6. Train relevant staff on EU AI Act requirements",
+    ];
+    recommendations.forEach(rec => addParagraph(rec));
+
+    // Footer on content pages
+    y += 15;
+    checkPageBreak(20);
+    pdf.setFontSize(9);
+    pdf.setTextColor(...gray);
+    pdf.setFont("helvetica", "italic");
+    pdf.text(`Document generated by Protectron Inc. on ${formatDate()}`, pageWidth / 2, y, { align: "center" });
+    y += 6;
+    pdf.text("For comprehensive compliance management, visit https://protectron.ai", pageWidth / 2, y, { align: "center" });
+
+    // Add page footers
+    const totalPages = pdf.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      if (i > 1) { // Skip title page
+        addFooter(i - 1, totalPages - 1);
+      }
+    }
+
+    // Save PDF
+    const filename = `EU-AI-Act-Assessment-${data.companyName?.replace(/[^a-zA-Z0-9]/g, "_") || "Report"}-${new Date().toISOString().split("T")[0]}.pdf`;
+    pdf.save(filename);
+
+    addToast({
+      title: "Report downloaded",
+      message: "Your compliance assessment report has been saved as a PDF.",
+      type: "success",
+    });
+  };
 
   const handleContinueToDashboard = async () => {
     setIsSaving(true);
@@ -326,37 +569,52 @@ export default function AssessmentResultsPage() {
 
         {/* Key Deadlines */}
         <div className="mb-6 sm:mb-10">
-          <h2 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2 sm:text-xl sm:mb-6">
+          <h2 className="text-lg font-semibold text-primary dark:text-white mb-4 flex items-center gap-2 sm:text-xl sm:mb-6">
             <Calendar className="h-5 w-5 text-brand-600 sm:h-6 sm:w-6" />
             Key Compliance Deadlines
           </h2>
           
-          <div className="rounded-lg border border-secondary bg-white p-4 sm:rounded-xl sm:p-6">
-            <Progress.IconsWithText 
-              type="featured-icon"
-              orientation="vertical"
-              size="md"
-              items={[
-                { 
-                  title: "August 2, 2025", 
-                  description: "Prohibited AI practices must stop", 
-                  status: "complete" as const,
-                  icon: AlertCircle,
-                },
-                { 
-                  title: "August 2, 2026", 
-                  description: "High-risk AI systems must be compliant", 
-                  status: "current" as const,
-                  icon: Flag05,
-                },
-                { 
-                  title: "August 2, 2027", 
-                  description: "All AI systems must be fully compliant", 
-                  status: "incomplete" as const,
-                  icon: CheckCircle,
-                },
-              ] as ProgressFeaturedIconType[]}
-            />
+          <div className="rounded-lg border border-secondary dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:rounded-xl sm:p-6">
+            <div className="space-y-4">
+              {/* Deadline 1 - Complete */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700">
+                  <AlertCircle className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">August 2, 2025</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Prohibited AI practices must stop</p>
+                </div>
+              </div>
+              
+              {/* Connector */}
+              <div className="ml-5 h-4 w-0.5 bg-gray-200 dark:bg-gray-600" />
+              
+              {/* Deadline 2 - Current */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/30 ring-2 ring-brand-600">
+                  <Flag05 className="h-5 w-5 text-brand-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-primary dark:text-white">August 2, 2026</p>
+                  <p className="text-sm text-tertiary dark:text-gray-300">High-risk AI systems must be compliant</p>
+                </div>
+              </div>
+              
+              {/* Connector */}
+              <div className="ml-5 h-4 w-0.5 bg-gray-200 dark:bg-gray-600" />
+              
+              {/* Deadline 3 - Incomplete */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+                  <CheckCircle className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-tertiary dark:text-gray-300">August 2, 2027</p>
+                  <p className="text-sm text-quaternary dark:text-gray-400">All AI systems must be fully compliant</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -374,14 +632,14 @@ export default function AssessmentResultsPage() {
             <div className="flex flex-col gap-2 w-full sm:flex-row sm:gap-3 sm:w-auto shrink-0">
               <button
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/20 sm:px-5 sm:py-3"
-                onClick={() => {}}
+                onClick={handleDownloadReport}
               >
                 <DocumentDownload size={16} color="currentColor" className="text-white sm:hidden" variant="Bold" />
                 <DocumentDownload size={18} color="currentColor" className="text-white hidden sm:block" variant="Bold" />
                 <span>Download Report</span>
               </button>
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-50 sm:px-5 sm:py-3"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:opacity-50 sm:px-5 sm:py-3 animate-pulse-scale"
                 onClick={handleContinueToDashboard}
                 disabled={isSaving}
               >
@@ -412,6 +670,17 @@ export default function AssessmentResultsPage() {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        @keyframes pulseScale {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+          }
+        }
+        :global(.animate-pulse-scale) {
+          animation: pulseScale 2s ease-in-out infinite;
         }
       `}</style>
     </div>

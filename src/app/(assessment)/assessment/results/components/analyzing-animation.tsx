@@ -61,22 +61,22 @@ export const AnalyzingAnimation = ({ onComplete }: AnalyzingAnimationProps) => {
           </div>
         </div>
 
-        <h2 className="text-lg font-semibold text-primary mb-1 sm:text-xl sm:mb-2">
+        <h2 className="text-lg font-semibold text-primary dark:text-white mb-1 sm:text-xl sm:mb-2">
           Analyzing Your Assessment
         </h2>
-        <p className="text-sm text-tertiary mb-6 sm:text-base sm:mb-8">
+        <p className="text-sm text-tertiary dark:text-gray-400 mb-6 sm:text-base sm:mb-8">
           Please wait while we process your responses...
         </p>
 
         {/* Progress bar */}
         <div className="mb-6 sm:mb-8">
-          <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden sm:h-2">
+          <div className="h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden sm:h-2">
             <div 
               className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full transition-all duration-100 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="mt-2 text-xs text-tertiary sm:text-sm">{progress}% complete</p>
+          <p className="mt-2 text-xs text-tertiary dark:text-gray-400 sm:text-sm">{progress}% complete</p>
         </div>
 
         {/* Steps */}
@@ -91,33 +91,33 @@ export const AnalyzingAnimation = ({ onComplete }: AnalyzingAnimationProps) => {
                 key={step.label}
                 className={cx(
                   "flex items-center gap-2 rounded-lg p-2 transition-all duration-300 sm:gap-3 sm:rounded-xl sm:p-3",
-                  isActive && "bg-brand-50 scale-105",
-                  isComplete && "opacity-60",
-                  !isActive && !isComplete && "opacity-40"
+                  isActive && "bg-brand-50 dark:bg-brand-900/30 scale-105",
+                  isComplete && "opacity-80",
+                  !isActive && !isComplete && "opacity-50"
                 )}
               >
                 <div className={cx(
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-300 sm:h-10 sm:w-10",
-                  isActive && "bg-brand-100",
-                  isComplete && "bg-success-100",
-                  !isActive && !isComplete && "bg-gray-100"
+                  isActive && "bg-brand-100 dark:bg-brand-800/50",
+                  isComplete && "bg-success-100 dark:bg-success-900/30",
+                  !isActive && !isComplete && "bg-gray-100 dark:bg-gray-700"
                 )}>
                   {isComplete ? (
                     <TickCircle size={18} color="currentColor" className="text-success-600 sm:hidden" variant="Bold" />
                   ) : (
-                    <Icon size={18} color="currentColor" className={cx(isActive ? step.color : "text-gray-400", "sm:hidden")} variant={isActive ? "Bold" : "Linear"} />
+                    <Icon size={18} color="currentColor" className={cx(isActive ? step.color : "text-gray-400 dark:text-gray-500", "sm:hidden")} variant={isActive ? "Bold" : "Linear"} />
                   )}
                   {isComplete ? (
                     <TickCircle size={20} color="currentColor" className="text-success-600 hidden sm:block" variant="Bold" />
                   ) : (
-                    <Icon size={20} color="currentColor" className={cx(isActive ? step.color : "text-gray-400", "hidden sm:block")} variant={isActive ? "Bold" : "Linear"} />
+                    <Icon size={20} color="currentColor" className={cx(isActive ? step.color : "text-gray-400 dark:text-gray-500", "hidden sm:block")} variant={isActive ? "Bold" : "Linear"} />
                   )}
                 </div>
                 <span className={cx(
                   "text-sm font-medium transition-all duration-300 sm:text-base",
-                  isActive && "text-primary",
-                  isComplete && "text-success-600",
-                  !isActive && !isComplete && "text-tertiary"
+                  isActive && "text-brand-700 dark:text-brand-300",
+                  isComplete && "text-success-600 dark:text-success-400",
+                  !isActive && !isComplete && "text-gray-500 dark:text-gray-400"
                 )}>
                   {step.label}
                 </span>

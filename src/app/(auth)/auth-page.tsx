@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Mail01 } from "@untitledui/icons";
 import { ShieldTick } from "iconsax-react";
 import Image from "next/image";
+import Autoplay from "embla-carousel-autoplay";
 import { Globe } from "@/components/ui/globe";
+import { ConfirmationModal } from "@/components/application/modals/confirmation-modal";
+import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components";
+import { Modal, ModalOverlay, Dialog } from "@/components/application/modals/modal";
+import { CloseButton } from "@/components/base/buttons/close-button";
 import { Carousel } from "@/components/application/carousel/carousel-base";
 import { CarouselIndicator } from "@/components/application/carousel/carousel.demo";
 import { Button } from "@/components/base/buttons/button";
@@ -84,6 +89,7 @@ export function AuthPage() {
   const { addToast } = useToast();
   const [mode, setMode] = useState<AuthMode>("signup");
   const [isLoading, setIsLoading] = useState(false);
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -158,7 +164,13 @@ export function AuthPage() {
           return;
         }
 
-        // Sign up goes to assessment/onboarding flow
+        // Show welcome toast and go to assessment/onboarding flow
+        addToast({
+          title: "Account created successfully!",
+          message: "Welcome to Protectron. Let's get started with your compliance assessment.",
+          type: "success",
+        });
+        
         router.push("/assessment");
         router.refresh();
       }
@@ -173,19 +185,12 @@ export function AuthPage() {
     }
   };
 
-  const handleGoogleAuth = async () => {
-    const supabase = createClient();
-    const redirectTo = mode === "signin" ? "/dashboard" : "/assessment";
-    
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/api/auth/callback?next=${redirectTo}`,
-      },
-    });
+  const handleGoogleAuth = () => {
+    setIsComingSoonOpen(true);
   };
 
   return (
+    <>
     <section className="grid min-h-screen grid-cols-1 bg-primary lg:grid-cols-2">
       {/* Left Side - Form */}
       <div className="flex flex-col bg-primary">
@@ -333,12 +338,12 @@ export function AuthPage() {
         <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-primary">
           {/* Globe Container - Positioned to align with sign in/sign up toggle */}
           <div className="relative flex flex-1 w-full items-center justify-center pt-16">
-            <Globe className="top-4 max-w-[700px]" />
+            <Globe className="top-0 max-w-[850px]" />
           </div>
           
           {/* Carousel Text at Bottom */}
           <div className="relative z-10 w-full px-8 pb-10 bg-primary">
-            <Carousel.Root className="w-full">
+            <Carousel.Root className="w-full" opts={{ loop: true }} plugins={[Autoplay({ delay: 3000, stopOnInteraction: false })]}>
               <Carousel.Content overflowHidden={false}>
                 {carouselContent.map((item, i) => (
                   <Carousel.Item key={i} className="flex flex-col items-center">
@@ -366,5 +371,45 @@ export function AuthPage() {
         </div>
       </div>
     </section>
+
+      {/* Coming Soon Modal for Google Sign-in */}
+      <AriaDialogTrigger isOpen={isComingSoonOpen} onOpenChange={setIsComingSoonOpen}>
+        <ModalOverlay isDismissable>
+          <Modal>
+            <Dialog>
+              <div className="relative w-full overflow-hidden rounded-2xl bg-primary shadow-xl sm:max-w-md">
+                <CloseButton 
+                  onClick={() => setIsComingSoonOpen(false)} 
+                  theme="light" 
+                  size="lg" 
+                  className="absolute top-3 right-3 z-20" 
+                />
+                <div className="flex flex-col items-center gap-4 px-6 py-8 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100">
+                    <ShieldTick size={28} className="text-brand-600" color="currentColor" variant="Bold" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <AriaHeading slot="title" className="text-lg font-semibold text-primary">
+                      Coming Soon
+                    </AriaHeading>
+                    <p className="text-sm text-tertiary">
+                      Google sign-in will be available soon. For now, please sign up with your email and password.
+                    </p>
+                  </div>
+                  <Button 
+                    color="primary" 
+                    size="lg" 
+                    className="mt-2 w-full"
+                    onClick={() => setIsComingSoonOpen(false)}
+                  >
+                    Got it
+                  </Button>
+                </div>
+              </div>
+            </Dialog>
+          </Modal>
+        </ModalOverlay>
+      </AriaDialogTrigger>
+    </>
   );
 }
