@@ -110,6 +110,47 @@ export async function POST(request: Request) {
 
     const userName = profile.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
 
+    // Check AI system limit before creating
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("plan, max_ai_systems")
+      .eq("id", profile.organization_id)
+      .single();
+
+    const { count: currentCount } = await supabase
+      .from("ai_systems")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", profile.organization_id);
+
+    if (org && currentCount !== null && currentCount >= (org.max_ai_systems || 2)) {
+      // Queue the "third-system-blocked" email (table not in TS types yet, use type assertion)
+      await (supabase as any).from("email_queue").insert({
+        user_id: user.id,
+        organization_id: profile.organization_id,
+        email_type: "third-system-blocked",
+        scheduled_for: new Date().toISOString(),
+        payload: {
+          user_name: userName,
+          user_email: user.email,
+          current_count: currentCount,
+          max_allowed: org.max_ai_systems || 2,
+          plan: org.plan || "free",
+        },
+      });
+
+      return NextResponse.json(
+        { 
+          error: "AI system limit reached",
+          message: `Your ${org.plan || 'free'} plan allows ${org.max_ai_systems || 2} AI systems. Please upgrade to add more.`,
+          code: "LIMIT_EXCEEDED",
+          currentCount,
+          maxAllowed: org.max_ai_systems || 2,
+          plan: org.plan || 'free'
+        }, 
+        { status: 403 }
+      );
+    }
+
     // Validate request body with Zod schema
     let body;
     try {
