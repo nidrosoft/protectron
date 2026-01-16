@@ -2,7 +2,38 @@
  * Document Generator Types
  */
 
-export type DocumentType = "technical" | "risk" | "policy" | "model_card";
+export type DocumentType = 
+  | "technical" 
+  | "risk" 
+  | "policy" 
+  | "model_card"
+  // Phase 1 - High Priority
+  | "testing_validation"
+  | "instructions_for_use"
+  | "human_oversight"
+  | "security_assessment"
+  // Phase 2 - Medium Priority
+  | "risk_mitigation_plan"
+  | "training_data_doc"
+  | "bias_assessment"
+  | "ai_system_description"
+  | "logging_policy"
+  | "deployer_checklist"
+  // Phase 3 - Lower Priority
+  | "risk_management_policy"
+  | "design_development_spec"
+  | "audit_trail_samples"
+  | "log_retention_doc"
+  | "deployer_info_package"
+  | "user_notification_templates"
+  | "intervention_protocols"
+  | "operator_training_records"
+  | "accuracy_test_results"
+  | "robustness_testing_doc"
+  | "incident_reporting_procedures"
+  | "monitoring_log"
+  | "ai_disclosure_notice"
+  | "synthetic_content_policy";
 
 export interface DocumentMetadata {
   title: string;

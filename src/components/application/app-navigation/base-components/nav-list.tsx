@@ -36,12 +36,13 @@ export const NavList = ({ activeUrl, items, className }: NavListProps) => {
                             key={item.label}
                             open={activeItem?.href === item.href}
                             className="appearance-none"
+                            data-walkthrough={item.dataWalkthrough}
                             onToggle={(e) => {
                                 setOpen(e.currentTarget.open);
                                 setCurrentItem(item);
                             }}
                         >
-                            <NavItemBase href={item.href} badge={item.badge} icon={item.icon} type="collapsible">
+                            <NavItemBase href={item.href} badge={item.badge} icon={item.icon} type="collapsible" dataWalkthrough={item.dataWalkthrough}>
                                 {item.label}
                             </NavItemBase>
 
@@ -74,6 +75,7 @@ export const NavList = ({ activeUrl, items, className }: NavListProps) => {
                             href={item.href}
                             current={activeUrl === item.href}
                             open={open && activeUrl === item.href}
+                            dataWalkthrough={item.dataWalkthrough}
                         >
                             {item.label}
                         </NavItemBase>

@@ -33,7 +33,38 @@ const GENERATION_STEPS = [
   "Finalizing your document...",
 ];
 
-type DocumentType = "technical" | "risk" | "policy" | "model_card";
+type DocumentType = 
+  | "technical" 
+  | "risk" 
+  | "policy" 
+  | "model_card"
+  // Phase 1 - High Priority
+  | "testing_validation"
+  | "instructions_for_use"
+  | "human_oversight"
+  | "security_assessment"
+  // Phase 2 - Medium Priority
+  | "risk_mitigation_plan"
+  | "training_data_doc"
+  | "bias_assessment"
+  | "ai_system_description"
+  | "logging_policy"
+  | "deployer_checklist"
+  // Phase 3 - Lower Priority
+  | "risk_management_policy"
+  | "design_development_spec"
+  | "audit_trail_samples"
+  | "log_retention_doc"
+  | "deployer_info_package"
+  | "user_notification_templates"
+  | "intervention_protocols"
+  | "operator_training_records"
+  | "accuracy_test_results"
+  | "robustness_testing_doc"
+  | "incident_reporting_procedures"
+  | "monitoring_log"
+  | "ai_disclosure_notice"
+  | "synthetic_content_policy";
 
 interface DocumentGeneratorModalProps {
   isOpen: boolean;
@@ -84,6 +115,225 @@ const documentTypes = [
     bgColor: "bg-blue-100",
     textColor: "text-blue-600",
   },
+  // Phase 1 - High Priority Documents
+  {
+    id: "testing_validation" as const,
+    name: "Testing & Validation Report",
+    description: "Documents your AI system's testing methodology, validation procedures, and results. Required under Article 11 to demonstrate the system performs as intended and meets accuracy requirements.",
+    icon: ClipboardText,
+    color: "green",
+    bgColor: "bg-green-100",
+    textColor: "text-green-600",
+  },
+  {
+    id: "instructions_for_use" as const,
+    name: "Instructions for Use",
+    description: "Clear guidance for deployers on how to use your AI system safely and effectively. Required under Article 13 to ensure transparency and proper human oversight.",
+    icon: DocumentText1,
+    color: "cyan",
+    bgColor: "bg-cyan-100",
+    textColor: "text-cyan-600",
+  },
+  {
+    id: "human_oversight" as const,
+    name: "Human Oversight Procedures",
+    description: "Defines how humans monitor, intervene, and override AI decisions. Required under Article 14 to ensure effective human control over high-risk AI systems.",
+    icon: Document,
+    color: "indigo",
+    bgColor: "bg-indigo-100",
+    textColor: "text-indigo-600",
+  },
+  {
+    id: "security_assessment" as const,
+    name: "Security Assessment Report",
+    description: "Evaluates cybersecurity threats, vulnerabilities, and protective measures for your AI system. Required under Article 15 to ensure appropriate security levels.",
+    icon: ClipboardText,
+    color: "red",
+    bgColor: "bg-red-100",
+    textColor: "text-red-600",
+  },
+  // Phase 2 - Medium Priority Documents
+  {
+    id: "risk_mitigation_plan" as const,
+    name: "Risk Mitigation Plan",
+    description: "Specific action plan detailing how identified risks will be addressed and reduced. Supports Article 9 risk management requirements.",
+    icon: ClipboardText,
+    color: "orange",
+    bgColor: "bg-orange-100",
+    textColor: "text-orange-600",
+  },
+  {
+    id: "training_data_doc" as const,
+    name: "Training Data Documentation",
+    description: "Documents data sources, collection methods, preprocessing, and labeling procedures used to train your AI model. Required under Article 10.",
+    icon: Note,
+    color: "teal",
+    bgColor: "bg-teal-100",
+    textColor: "text-teal-600",
+  },
+  {
+    id: "bias_assessment" as const,
+    name: "Bias Assessment Report",
+    description: "Analyzes potential biases in your AI system's training data and outputs. Required under Article 10 to ensure fairness and non-discrimination.",
+    icon: ClipboardText,
+    color: "pink",
+    bgColor: "bg-pink-100",
+    textColor: "text-pink-600",
+  },
+  {
+    id: "ai_system_description" as const,
+    name: "AI System Description",
+    description: "General description of your AI system including its purpose, functionality, and operational context. Core component of Article 11 technical documentation.",
+    icon: DocumentText1,
+    color: "violet",
+    bgColor: "bg-violet-100",
+    textColor: "text-violet-600",
+  },
+  {
+    id: "logging_policy" as const,
+    name: "Logging Policy",
+    description: "Defines what events are automatically recorded, how logs are stored, and retention periods. Required under Article 12 for traceability.",
+    icon: Note,
+    color: "slate",
+    bgColor: "bg-slate-100",
+    textColor: "text-slate-600",
+  },
+  {
+    id: "deployer_checklist" as const,
+    name: "Deployer Compliance Checklist",
+    description: "Checklist for organizations deploying your AI system to ensure they meet Article 26 deployer obligations.",
+    icon: ClipboardText,
+    color: "emerald",
+    bgColor: "bg-emerald-100",
+    textColor: "text-emerald-600",
+  },
+  // Phase 3 - Lower Priority Documents
+  {
+    id: "risk_management_policy" as const,
+    name: "Risk Management Policy",
+    description: "Overall framework for identifying, analyzing, and managing risks throughout the AI system lifecycle. Supports Article 9 requirements.",
+    icon: Note,
+    color: "amber",
+    bgColor: "bg-amber-100",
+    textColor: "text-amber-600",
+  },
+  {
+    id: "design_development_spec" as const,
+    name: "Design & Development Specification",
+    description: "Technical specifications covering system architecture, algorithms, and design decisions. Part of Article 11 technical documentation.",
+    icon: DocumentText1,
+    color: "sky",
+    bgColor: "bg-sky-100",
+    textColor: "text-sky-600",
+  },
+  {
+    id: "audit_trail_samples" as const,
+    name: "Audit Trail Samples",
+    description: "Example logs demonstrating your system's traceability capabilities. Supports Article 12 record-keeping requirements.",
+    icon: Document,
+    color: "stone",
+    bgColor: "bg-stone-100",
+    textColor: "text-stone-600",
+  },
+  {
+    id: "log_retention_doc" as const,
+    name: "Log Retention Documentation",
+    description: "Documents log retention periods and secure deletion procedures. Part of Article 12 compliance.",
+    icon: Note,
+    color: "zinc",
+    bgColor: "bg-zinc-100",
+    textColor: "text-zinc-600",
+  },
+  {
+    id: "deployer_info_package" as const,
+    name: "Deployer Information Package",
+    description: "Comprehensive information package for deployers including system characteristics, limitations, and support contacts. Required under Article 13.",
+    icon: Document,
+    color: "lime",
+    bgColor: "bg-lime-100",
+    textColor: "text-lime-600",
+  },
+  {
+    id: "user_notification_templates" as const,
+    name: "User Notification Templates",
+    description: "Templates for informing end users about AI system interactions. Supports Article 13 transparency requirements.",
+    icon: DocumentText1,
+    color: "fuchsia",
+    bgColor: "bg-fuchsia-100",
+    textColor: "text-fuchsia-600",
+  },
+  {
+    id: "intervention_protocols" as const,
+    name: "Intervention Protocols",
+    description: "Step-by-step procedures for human operators to intervene in or override AI system decisions. Part of Article 14 compliance.",
+    icon: ClipboardText,
+    color: "rose",
+    bgColor: "bg-rose-100",
+    textColor: "text-rose-600",
+  },
+  {
+    id: "operator_training_records" as const,
+    name: "Operator Training Records",
+    description: "Documentation of training provided to human operators overseeing the AI system. Supports Article 14 requirements.",
+    icon: Note,
+    color: "yellow",
+    bgColor: "bg-yellow-100",
+    textColor: "text-yellow-600",
+  },
+  {
+    id: "accuracy_test_results" as const,
+    name: "Accuracy Test Results",
+    description: "Detailed performance accuracy metrics and test results for your AI system. Required under Article 15.",
+    icon: ClipboardText,
+    color: "green",
+    bgColor: "bg-green-100",
+    textColor: "text-green-600",
+  },
+  {
+    id: "robustness_testing_doc" as const,
+    name: "Robustness Testing Documentation",
+    description: "Documents testing for error handling, edge cases, and system resilience. Part of Article 15 requirements.",
+    icon: Document,
+    color: "blue",
+    bgColor: "bg-blue-100",
+    textColor: "text-blue-600",
+  },
+  {
+    id: "incident_reporting_procedures" as const,
+    name: "Incident Reporting Procedures",
+    description: "Procedures for reporting serious incidents to providers and authorities. Required under Article 26 for deployers.",
+    icon: ClipboardText,
+    color: "red",
+    bgColor: "bg-red-100",
+    textColor: "text-red-600",
+  },
+  {
+    id: "monitoring_log" as const,
+    name: "Monitoring Log Template",
+    description: "Template for ongoing monitoring records of AI system operation. Supports Article 26 deployer obligations.",
+    icon: Note,
+    color: "purple",
+    bgColor: "bg-purple-100",
+    textColor: "text-purple-600",
+  },
+  {
+    id: "ai_disclosure_notice" as const,
+    name: "AI Disclosure Notice",
+    description: "Notice template informing users they are interacting with an AI system. Required under Article 50 for limited-risk systems.",
+    icon: DocumentText1,
+    color: "cyan",
+    bgColor: "bg-cyan-100",
+    textColor: "text-cyan-600",
+  },
+  {
+    id: "synthetic_content_policy" as const,
+    name: "Synthetic Content Policy",
+    description: "Policy for marking and disclosing AI-generated content. Required under Article 50 for systems generating synthetic media.",
+    icon: Note,
+    color: "indigo",
+    bgColor: "bg-indigo-100",
+    textColor: "text-indigo-600",
+  },
 ];
 
 
@@ -109,6 +359,141 @@ const questionsByType: Record<DocumentType, { id: string; label: string; placeho
     { id: "capabilities", label: "What are the model's capabilities?", placeholder: "The model can..." },
     { id: "limitations", label: "What are the model's limitations?", placeholder: "The model cannot..." },
     { id: "performance", label: "How does the model perform?", placeholder: "The model achieves..." },
+  ],
+  // Phase 1 - High Priority
+  testing_validation: [
+    { id: "test_methodology", label: "Describe your testing methodology", placeholder: "We test the system by..." },
+    { id: "test_data", label: "What test data do you use?", placeholder: "Our test datasets include..." },
+    { id: "metrics", label: "What metrics do you measure?", placeholder: "We measure accuracy, precision..." },
+    { id: "results", label: "What are the key test results?", placeholder: "The system achieved..." },
+  ],
+  instructions_for_use: [
+    { id: "setup", label: "How should deployers set up the system?", placeholder: "To set up the system..." },
+    { id: "operation", label: "How should the system be operated?", placeholder: "During normal operation..." },
+    { id: "limitations", label: "What limitations should users be aware of?", placeholder: "Users should know that..." },
+    { id: "support", label: "How can users get support?", placeholder: "For support, users can..." },
+  ],
+  human_oversight: [
+    { id: "oversight_roles", label: "Who is responsible for oversight?", placeholder: "The following roles are responsible..." },
+    { id: "monitoring", label: "How do humans monitor the system?", placeholder: "Humans monitor by..." },
+    { id: "intervention", label: "When and how can humans intervene?", placeholder: "Humans can intervene when..." },
+    { id: "override", label: "How can decisions be overridden?", placeholder: "Decisions can be overridden by..." },
+  ],
+  security_assessment: [
+    { id: "threats", label: "What security threats have been identified?", placeholder: "Identified threats include..." },
+    { id: "vulnerabilities", label: "What vulnerabilities exist?", placeholder: "Known vulnerabilities are..." },
+    { id: "controls", label: "What security controls are in place?", placeholder: "We have implemented..." },
+    { id: "incident_response", label: "How do you respond to security incidents?", placeholder: "In case of an incident..." },
+  ],
+  // Phase 2 - Medium Priority
+  risk_mitigation_plan: [
+    { id: "identified_risks", label: "What risks have been identified?", placeholder: "The identified risks are..." },
+    { id: "mitigation_actions", label: "What specific actions will mitigate each risk?", placeholder: "For each risk, we will..." },
+    { id: "timeline", label: "What is the timeline for implementation?", placeholder: "Mitigations will be implemented by..." },
+    { id: "responsibility", label: "Who is responsible for each mitigation?", placeholder: "Responsibilities are assigned to..." },
+  ],
+  training_data_doc: [
+    { id: "sources", label: "Where does your training data come from?", placeholder: "Training data is sourced from..." },
+    { id: "collection", label: "How is data collected and processed?", placeholder: "Data is collected by..." },
+    { id: "labeling", label: "How is data labeled?", placeholder: "Data labeling is done by..." },
+    { id: "quality_checks", label: "What quality checks are performed?", placeholder: "We check data quality by..." },
+  ],
+  bias_assessment: [
+    { id: "bias_types", label: "What types of bias have you assessed?", placeholder: "We assessed for..." },
+    { id: "detection_methods", label: "How do you detect bias?", placeholder: "Bias is detected through..." },
+    { id: "findings", label: "What bias issues were found?", placeholder: "Our assessment found..." },
+    { id: "remediation", label: "How are bias issues addressed?", placeholder: "We address bias by..." },
+  ],
+  ai_system_description: [
+    { id: "overview", label: "Provide a high-level overview of the system", placeholder: "This AI system is..." },
+    { id: "functionality", label: "What are the main functions?", placeholder: "The main functions include..." },
+    { id: "architecture", label: "Describe the system architecture", placeholder: "The system consists of..." },
+    { id: "integration", label: "How does it integrate with other systems?", placeholder: "The system integrates with..." },
+  ],
+  logging_policy: [
+    { id: "events_logged", label: "What events are logged?", placeholder: "We log the following events..." },
+    { id: "storage", label: "How are logs stored?", placeholder: "Logs are stored in..." },
+    { id: "retention", label: "How long are logs retained?", placeholder: "Logs are retained for..." },
+    { id: "access", label: "Who can access the logs?", placeholder: "Log access is restricted to..." },
+  ],
+  deployer_checklist: [
+    { id: "prerequisites", label: "What prerequisites must deployers meet?", placeholder: "Before deployment, ensure..." },
+    { id: "compliance_items", label: "What compliance items must be verified?", placeholder: "Deployers must verify..." },
+    { id: "ongoing_obligations", label: "What ongoing obligations exist?", placeholder: "Deployers must continuously..." },
+    { id: "reporting", label: "What must be reported and when?", placeholder: "Deployers must report..." },
+  ],
+  // Phase 3 - Lower Priority
+  risk_management_policy: [
+    { id: "framework", label: "Describe your risk management framework", placeholder: "Our framework includes..." },
+    { id: "identification", label: "How are risks identified?", placeholder: "Risks are identified through..." },
+    { id: "assessment", label: "How are risks assessed?", placeholder: "Risks are assessed by..." },
+    { id: "review", label: "How often is the policy reviewed?", placeholder: "The policy is reviewed..." },
+  ],
+  design_development_spec: [
+    { id: "design_principles", label: "What design principles were followed?", placeholder: "The system was designed with..." },
+    { id: "architecture_details", label: "Describe the technical architecture", placeholder: "The architecture consists of..." },
+    { id: "algorithms", label: "What algorithms are used?", placeholder: "The system uses..." },
+    { id: "development_process", label: "Describe the development process", placeholder: "Development followed..." },
+  ],
+  audit_trail_samples: [
+    { id: "sample_events", label: "What types of events are shown in samples?", placeholder: "Sample logs show..." },
+    { id: "format", label: "What is the log format?", placeholder: "Logs are formatted as..." },
+    { id: "traceability", label: "How do logs enable traceability?", placeholder: "Traceability is achieved by..." },
+  ],
+  log_retention_doc: [
+    { id: "retention_periods", label: "What are the retention periods?", placeholder: "Different log types are retained for..." },
+    { id: "deletion_procedures", label: "How are logs securely deleted?", placeholder: "Logs are deleted by..." },
+    { id: "legal_requirements", label: "What legal requirements apply?", placeholder: "We comply with..." },
+  ],
+  deployer_info_package: [
+    { id: "system_info", label: "What system information is provided?", placeholder: "Deployers receive information about..." },
+    { id: "contact_info", label: "What support contacts are provided?", placeholder: "Support is available at..." },
+    { id: "updates", label: "How are deployers notified of updates?", placeholder: "Updates are communicated via..." },
+  ],
+  user_notification_templates: [
+    { id: "ai_interaction", label: "How do you notify users of AI interaction?", placeholder: "Users are informed that..." },
+    { id: "data_usage", label: "How is data usage communicated?", placeholder: "Users are told their data..." },
+    { id: "opt_out", label: "What opt-out options exist?", placeholder: "Users can opt out by..." },
+  ],
+  intervention_protocols: [
+    { id: "triggers", label: "What triggers human intervention?", placeholder: "Intervention is triggered when..." },
+    { id: "procedures", label: "What are the intervention procedures?", placeholder: "When intervening, operators should..." },
+    { id: "escalation", label: "What is the escalation path?", placeholder: "Issues are escalated to..." },
+  ],
+  operator_training_records: [
+    { id: "training_content", label: "What training is provided?", placeholder: "Operators are trained on..." },
+    { id: "certification", label: "What certifications are required?", placeholder: "Operators must be certified in..." },
+    { id: "refresher", label: "How often is refresher training required?", placeholder: "Refresher training occurs..." },
+  ],
+  accuracy_test_results: [
+    { id: "test_conditions", label: "Under what conditions were tests performed?", placeholder: "Tests were conducted under..." },
+    { id: "accuracy_metrics", label: "What accuracy metrics were measured?", placeholder: "We measured..." },
+    { id: "results_summary", label: "Summarize the accuracy results", placeholder: "The system achieved..." },
+  ],
+  robustness_testing_doc: [
+    { id: "test_scenarios", label: "What scenarios were tested?", placeholder: "We tested scenarios including..." },
+    { id: "edge_cases", label: "What edge cases were evaluated?", placeholder: "Edge cases included..." },
+    { id: "failure_modes", label: "What failure modes were identified?", placeholder: "Identified failure modes include..." },
+  ],
+  incident_reporting_procedures: [
+    { id: "incident_types", label: "What types of incidents must be reported?", placeholder: "Reportable incidents include..." },
+    { id: "reporting_process", label: "What is the reporting process?", placeholder: "To report an incident..." },
+    { id: "timelines", label: "What are the reporting timelines?", placeholder: "Incidents must be reported within..." },
+  ],
+  monitoring_log: [
+    { id: "monitoring_frequency", label: "How often is monitoring performed?", placeholder: "Monitoring occurs..." },
+    { id: "metrics_tracked", label: "What metrics are tracked?", placeholder: "We track..." },
+    { id: "anomaly_detection", label: "How are anomalies detected?", placeholder: "Anomalies are detected by..." },
+  ],
+  ai_disclosure_notice: [
+    { id: "disclosure_text", label: "What disclosure text is shown to users?", placeholder: "Users are shown..." },
+    { id: "placement", label: "Where is the disclosure displayed?", placeholder: "The disclosure appears..." },
+    { id: "timing", label: "When is the disclosure shown?", placeholder: "The disclosure is shown..." },
+  ],
+  synthetic_content_policy: [
+    { id: "content_types", label: "What types of synthetic content are generated?", placeholder: "The system generates..." },
+    { id: "marking_method", label: "How is synthetic content marked?", placeholder: "Content is marked by..." },
+    { id: "user_awareness", label: "How are users made aware?", placeholder: "Users are informed that..." },
   ],
 };
 

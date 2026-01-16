@@ -35,6 +35,8 @@ import { ToastProvider } from "@/components/base/toast/toast";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import { NotificationsSlideout } from "@/components/application/slideout-menus/notifications-slideout";
 import { UpgradePlanModal } from "@/components/application/modals/upgrade-plan-modal";
+import { WalkthroughProvider } from "@/contexts/walkthrough-context";
+import { WalkthroughController } from "@/components/walkthrough";
 import { cx } from "@/utils/cx";
 import { useIncidents } from "@/hooks";
 import { createClient } from "@/lib/supabase/client";
@@ -86,12 +88,14 @@ const getNavItems = (incidentsCount: number, aiSystemsStats: AISystemsStats): Na
     label: "Dashboard",
     href: "/dashboard",
     icon: createIcon(Category),
+    dataWalkthrough: "nav-dashboard",
   },
   {
     label: "AI Systems",
     href: "/ai-systems",
     icon: createIcon(Cpu),
     badge: getAISystemsBadge(aiSystemsStats),
+    dataWalkthrough: "nav-ai-systems",
     items: [
       { label: "All Systems", href: "/ai-systems" },
       { label: "Agents", href: "/ai-systems?type=ai_agent" },
@@ -102,32 +106,38 @@ const getNavItems = (incidentsCount: number, aiSystemsStats: AISystemsStats): Na
     label: "Requirements",
     href: "/requirements",
     icon: createIcon(TickSquare),
+    dataWalkthrough: "nav-requirements",
   },
   {
     label: "Documents",
     href: "/documents",
     icon: createIcon(DocumentText),
+    dataWalkthrough: "nav-documents",
   },
   {
     label: "Evidence",
     href: "/evidence",
     icon: createIcon(FolderOpen),
+    dataWalkthrough: "nav-evidence",
   },
   {
     label: "Incidents",
     href: "/incidents",
     icon: createIcon(Warning2),
     badge: incidentsCount > 0 ? incidentsCount : undefined,
+    dataWalkthrough: "nav-incidents",
   },
   {
     label: "Reports",
     href: "/reports",
     icon: createIcon(Chart2),
+    dataWalkthrough: "nav-reports",
   },
   {
     label: "Resources",
     href: "/resources",
     icon: createIcon(Book),
+    dataWalkthrough: "nav-resources",
     items: [
       { label: "EU AI Act Guide", href: "/resources/guide", icon: createIcon(Book1) },
       { label: "Help Center", href: "/resources/help", icon: createIcon(InfoCircle) },
@@ -138,6 +148,7 @@ const getNavItems = (incidentsCount: number, aiSystemsStats: AISystemsStats): Na
     label: "Settings",
     href: "/settings",
     icon: createIcon(Setting2),
+    dataWalkthrough: "nav-settings",
   },
 ];
 
@@ -241,6 +252,7 @@ export default function DashboardLayout({
 
   return (
     <ToastProvider>
+    <WalkthroughProvider>
     <div className="h-screen overflow-hidden bg-primary">
       {/* Sidebar - Simple (expanded) or Slim (collapsed) */}
       {isCollapsed ? (
@@ -390,7 +402,11 @@ export default function DashboardLayout({
           router.push("/settings?tab=billing");
         }}
       />
+
+      {/* Walkthrough Controller */}
+      <WalkthroughController />
     </div>
+    </WalkthroughProvider>
     </ToastProvider>
   );
 }

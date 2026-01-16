@@ -13,6 +13,8 @@ export type NavItemType = {
     items?: { label: string; href: string; icon?: FC<{ className?: string }>; badge?: ReactNode }[];
     /** Whether this nav item is a divider. */
     divider?: boolean;
+    /** Data attribute for walkthrough targeting. */
+    dataWalkthrough?: string;
 };
 
 export type NavItemDividerType = Omit<NavItemType, "icon" | "label" | "divider"> & {

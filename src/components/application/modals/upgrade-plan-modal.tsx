@@ -25,7 +25,7 @@ import { CloseButton } from "@/components/base/buttons/close-button";
 import { Badge } from "@/components/base/badges/badges";
 import { cx } from "@/utils/cx";
 
-type PlanId = "test" | "professional" | "growth" | "scale";
+type PlanId = "professional" | "growth" | "scale";
 
 interface Plan {
   id: PlanId;
@@ -51,27 +51,6 @@ interface Plan {
 }
 
 const plans: Plan[] = [
-  {
-    id: "test",
-    name: "Test Plan",
-    price: 3,
-    currency: "$",
-    description: "For testing payments only",
-    icon: Flash,
-    color: "text-green-600",
-    bgColor: "bg-green-100",
-    features: {
-      aiSystems: 1,
-      aiAgents: "0",
-      eventsPerMonth: "1,000",
-      sdkIntegration: false,
-      auditTrail: false,
-      hitlRules: false,
-      logRetention: "N/A",
-      certificationBadges: false,
-      support: "None",
-    },
-  },
   {
     id: "professional",
     name: "Professional",

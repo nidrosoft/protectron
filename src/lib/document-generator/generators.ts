@@ -717,12 +717,39 @@ export async function generateDocument(
 /**
  * Get document type display name
  */
-export function getDocumentTypeName(type: DocumentData["type"]): string {
-  const names: Record<DocumentData["type"], string> = {
+export function getDocumentTypeName(type: string): string {
+  const names: Record<string, string> = {
     technical: "Technical Documentation",
     risk: "Risk Assessment Report",
     policy: "Data Governance Policy",
     model_card: "Model Card",
+    // Phase 1 - High Priority
+    testing_validation: "Testing & Validation Report",
+    instructions_for_use: "Instructions for Use",
+    human_oversight: "Human Oversight Procedures",
+    security_assessment: "Security Assessment Report",
+    // Phase 2 - Medium Priority
+    risk_mitigation_plan: "Risk Mitigation Plan",
+    training_data_doc: "Training Data Documentation",
+    bias_assessment: "Bias Assessment Report",
+    ai_system_description: "AI System Description",
+    logging_policy: "Logging Policy",
+    deployer_checklist: "Deployer Compliance Checklist",
+    // Phase 3 - Lower Priority
+    risk_management_policy: "Risk Management Policy",
+    design_development_spec: "Design & Development Specification",
+    audit_trail_samples: "Audit Trail Samples",
+    log_retention_doc: "Log Retention Documentation",
+    deployer_info_package: "Deployer Information Package",
+    user_notification_templates: "User Notification Templates",
+    intervention_protocols: "Intervention Protocols",
+    operator_training_records: "Operator Training Records",
+    accuracy_test_results: "Accuracy Test Results",
+    robustness_testing_doc: "Robustness Testing Documentation",
+    incident_reporting_procedures: "Incident Reporting Procedures",
+    monitoring_log: "Monitoring Log Template",
+    ai_disclosure_notice: "AI Disclosure Notice",
+    synthetic_content_policy: "Synthetic Content Policy",
   };
-  return names[type];
+  return names[type] || type;
 }

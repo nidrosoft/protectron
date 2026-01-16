@@ -32,9 +32,11 @@ interface NavItemBaseProps {
     onClick?: MouseEventHandler;
     /** Content to display. */
     children?: ReactNode;
+    /** Data attribute for walkthrough targeting. */
+    dataWalkthrough?: string;
 }
 
-export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, truncate = true, onClick }: NavItemBaseProps) => {
+export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, truncate = true, onClick, dataWalkthrough }: NavItemBaseProps) => {
     const iconElement = Icon && <Icon aria-hidden="true" className="size-5 shrink-0 text-fg-quaternary transition-inherit-all" />;
 
     const badgeElement =
@@ -63,7 +65,7 @@ export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, 
 
     if (type === "collapsible") {
         return (
-            <summary className={cx("px-3 py-2.5", styles.root, current && styles.rootSelected)} onClick={onClick}>
+            <summary className={cx("px-3 py-2.5", styles.root, current && styles.rootSelected)} onClick={onClick} data-walkthrough={dataWalkthrough}>
                 {iconElement}
 
                 {labelElement}
@@ -100,6 +102,7 @@ export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, 
             className={cx("px-3 py-2.5", styles.root, current && styles.rootSelected)}
             onClick={onClick}
             aria-current={current ? "page" : undefined}
+            data-walkthrough={dataWalkthrough}
         >
             {iconElement}
             {labelElement}

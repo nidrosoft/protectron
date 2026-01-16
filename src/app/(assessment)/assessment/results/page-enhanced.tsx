@@ -14,15 +14,6 @@ import {
   ComplianceRoadmap,
   TimelineDeadlines,
   CTASection,
-  // Phase 2 Components
-  PenaltyCalculator,
-  EffortEstimator,
-  QuickWins,
-  IndustryBenchmarks,
-  CalendarIntegration,
-  ShareFunctionality,
-  ComplianceConfidenceMeter,
-  PricingRecommendation,
 } from "./sections";
 import {
   calculateEnhancedResults,
@@ -196,8 +187,8 @@ export default function EnhancedAssessmentResultsPage() {
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
         {/* Hero Section */}
         <div className="mb-8 text-center sm:mb-12">
-          <div className="inline-flex items-center gap-2 rounded-full bg-brand-100 dark:bg-brand-900/30 px-3 py-1.5 sm:px-4 sm:py-2 text-brand-600">
-            <TickCircle size={16} color="currentColor" variant="Bold" />
+          <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 dark:bg-brand-900/30 px-3 py-1.5 mb-4 sm:px-4 sm:py-2 sm:mb-6">
+            <TickCircle size={16} className="text-brand-600" variant="Bold" />
             <span className="text-xs font-medium text-brand-700 dark:text-brand-300 sm:text-sm">
               Assessment Complete
             </span>
@@ -218,8 +209,9 @@ export default function EnhancedAssessmentResultsPage() {
         {results.hasEUExposure && (
           <div className="mb-6 rounded-xl border-2 border-warning-300 dark:border-warning-700 bg-gradient-to-r from-warning-50 to-warning-100 dark:from-warning-900/20 dark:to-warning-900/10 p-4 sm:mb-8 sm:p-6">
             <div className="flex items-start gap-3 sm:gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning-200 dark:bg-warning-800 sm:h-12 sm:w-12 text-warning-700 dark:text-warning-300">
-                <ShieldTick size={24} color="currentColor" variant="Bold" />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning-200 dark:bg-warning-800 sm:h-12 sm:w-12">
+                <ShieldTick size={20} className="text-warning-700 dark:text-warning-300 sm:hidden" variant="Bold" />
+                <ShieldTick size={24} className="text-warning-700 dark:text-warning-300 hidden sm:block" variant="Bold" />
               </div>
               <div>
                 <h3 className="text-base font-semibold text-warning-900 dark:text-warning-100 sm:text-lg">
@@ -241,16 +233,6 @@ export default function EnhancedAssessmentResultsPage() {
           companyName={data.companyName} 
         />
 
-        {/* Phase 2: Compliance Confidence Meter (Gamification) */}
-        <ComplianceConfidenceMeter results={results} />
-
-        {/* Phase 2: Industry Benchmarks */}
-        <IndustryBenchmarks 
-          complianceScore={results.complianceScore}
-          industry={data.industry}
-          totalSystems={results.totalSystems}
-        />
-
         {/* Section 2: AI Systems Detected */}
         <AISystemsDetected 
           systems={results.detectedSystems} 
@@ -260,18 +242,8 @@ export default function EnhancedAssessmentResultsPage() {
         {/* Section 3: Compliance Gaps */}
         <ComplianceGaps gaps={results.complianceGaps} />
 
-        {/* Phase 2: Penalty Calculator */}
-        <PenaltyCalculator 
-          hasHighRisk={hasHighRisk}
-          companySize={data.companySize}
-          industry={data.industry}
-        />
-
         {/* Section 4: Applicable EU AI Act Articles */}
         <ApplicableArticles articles={results.applicableArticles} />
-
-        {/* Phase 2: Effort/Time Estimator */}
-        <EffortEstimator results={results} />
 
         {/* Section 5: Compliance Roadmap */}
         <ComplianceRoadmap 
@@ -279,40 +251,10 @@ export default function EnhancedAssessmentResultsPage() {
           estimatedWeeks={results.estimatedWeeks} 
         />
 
-        {/* Phase 2: Quick Wins */}
-        <QuickWins 
-          onDownloadReport={handleDownloadReport}
-          onGoToDashboard={handleContinueToDashboard}
-          totalSystems={results.totalSystems}
-        />
-
         {/* Section 6: Timeline & Deadlines */}
         <TimelineDeadlines 
           daysUntilDeadline={results.daysUntilDeadline} 
           hasHighRisk={hasHighRisk} 
-        />
-
-        {/* Phase 2: Calendar Integration */}
-        <CalendarIntegration 
-          daysUntilDeadline={results.daysUntilDeadline}
-          companyName={data.companyName}
-          hasHighRisk={hasHighRisk}
-        />
-
-        {/* Phase 2: Share Functionality */}
-        <ShareFunctionality 
-          companyName={data.companyName}
-          complianceScore={results.complianceScore}
-          totalSystems={results.totalSystems}
-          hasHighRisk={hasHighRisk}
-          daysUntilDeadline={results.daysUntilDeadline}
-        />
-
-        {/* Pricing Recommendation */}
-        <PricingRecommendation 
-          totalSystems={results.totalSystems}
-          hasHighRisk={hasHighRisk}
-          onGoToDashboard={handleContinueToDashboard}
         />
 
         {/* Section 7: CTAs */}

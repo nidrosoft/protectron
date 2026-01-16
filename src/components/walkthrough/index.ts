@@ -1,0 +1,11 @@
+export { Spotlight } from "./spotlight";
+export { WalkthroughTooltip } from "./walkthrough-tooltip";
+export { WelcomeModal } from "./welcome-modal";
+export { ResumeModal } from "./resume-modal";
+export { CompletionModal } from "./completion-modal";
+export { ProgressIndicator } from "./progress-indicator";
+export { WalkthroughController } from "./walkthrough-controller";
+export { GettingStartedChecklist } from "./getting-started-checklist";
+export { WhatsNextRecommendation } from "./whats-next-recommendation";
+export { MilestoneCelebration, useMilestoneCelebration } from "./milestone-celebration";
+export type { MilestoneType } from "./milestone-celebration";

@@ -16,12 +16,15 @@ import {
 import { DeadlinesModal } from "@/components/application/modals/deadlines-modal";
 import { DocumentGeneratorModal } from "@/components/application/modals/document-generator-modal";
 import { UploadModal } from "@/components/application/modals/upload-modal";
+import { GettingStartedChecklist, WhatsNextRecommendation } from "@/components/walkthrough";
+import { useWalkthrough } from "@/contexts/walkthrough-context";
 import { useDashboard } from "@/hooks";
 import { riskLevelConfig, statusConfig, daysUntil } from "./data/mock-data";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { data, isLoading, error } = useDashboard();
+  useWalkthrough(); // Initialize walkthrough context for first-time users
   
   // Modal states
   const [isDeadlinesModalOpen, setIsDeadlinesModalOpen] = useState(false);
@@ -121,7 +124,23 @@ export default function DashboardPage() {
         totalSystems={stats.totalSystems}
         completedRequirements={stats.completedRequirements}
         totalRequirements={stats.totalRequirements}
+        documents={stats.documents}
+        pendingActions={stats.pendingActions}
       />
+
+      {/* Getting Started Checklist & What's Next - After metrics, before compliance overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-walkthrough="dashboard-main">
+        <GettingStartedChecklist />
+        <WhatsNextRecommendation 
+          onAction={(action) => {
+            if (action === "generate-document") {
+              setIsDocumentModalOpen(true);
+            } else if (action === "upload-evidence") {
+              setIsUploadModalOpen(true);
+            }
+          }}
+        />
+      </div>
 
       {/* Overall Compliance Status Card */}
       <ComplianceOverview
@@ -181,6 +200,7 @@ export default function DashboardPage() {
           setIsUploadModalOpen(false);
         }}
       />
+
     </div>
   );
 }
