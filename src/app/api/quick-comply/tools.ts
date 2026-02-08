@@ -623,7 +623,7 @@ export function buildTools(
             availableDocumentTypes:
               tier === "enterprise"
                 ? "all"
-                : tier === "pro"
+                : tier === "professional" || tier === "business"
                 ? "provider_full"
                 : tier === "starter"
                 ? "core_7"

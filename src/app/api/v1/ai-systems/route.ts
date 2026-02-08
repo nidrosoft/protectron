@@ -122,18 +122,18 @@ export async function POST(request: Request) {
       .select("*", { count: "exact", head: true })
       .eq("organization_id", profile.organization_id);
 
-    if (org && currentCount !== null && currentCount >= (org.max_ai_systems || 2)) {
-      // Queue the "third-system-blocked" email (table not in TS types yet, use type assertion)
+    if (org && currentCount !== null && currentCount >= (org.max_ai_systems || 1)) {
+      // Queue the "system-limit-blocked" email (table not in TS types yet, use type assertion)
       await (supabase as any).from("email_queue").insert({
         user_id: user.id,
         organization_id: profile.organization_id,
-        email_type: "third-system-blocked",
+        email_type: "system-limit-blocked",
         scheduled_for: new Date().toISOString(),
         payload: {
           user_name: userName,
           user_email: user.email,
           current_count: currentCount,
-          max_allowed: org.max_ai_systems || 2,
+          max_allowed: org.max_ai_systems || 1,
           plan: org.plan || "free",
         },
       });
@@ -141,10 +141,10 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { 
           error: "AI system limit reached",
-          message: `Your ${org.plan || 'free'} plan allows ${org.max_ai_systems || 2} AI systems. Please upgrade to add more.`,
+          message: `Your ${org.plan || 'free'} plan allows ${org.max_ai_systems || 1} AI system${(org.max_ai_systems || 1) === 1 ? '' : 's'}. Please upgrade to add more.`,
           code: "LIMIT_EXCEEDED",
           currentCount,
-          maxAllowed: org.max_ai_systems || 2,
+          maxAllowed: org.max_ai_systems || 1,
           plan: org.plan || 'free'
         }, 
         { status: 403 }

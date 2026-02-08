@@ -29,87 +29,87 @@ const PRICING_TIERS: PricingTier[] = [
     name: "Free",
     price: 0,
     currency: "€",
-    maxSystems: 2,
-    description: "Perfect for exploring and small projects",
+    maxSystems: 1,
+    description: "Explore the platform with 1 AI system",
     icon: Star1,
     color: "text-gray-600",
     bgColor: "bg-gray-100 dark:bg-gray-800",
     borderColor: "border-gray-300 dark:border-gray-600",
     features: [
-      "Up to 2 AI systems",
-      "Basic compliance tracking",
-      "Document templates",
-      "Email support",
+      "1 AI system",
+      "Basic risk assessment",
+      "2 documents/month (DOCX)",
+      "Community support",
     ],
   },
   {
-    id: "professional",
-    name: "Professional",
+    id: "starter",
+    name: "Starter",
     price: 99,
     currency: "€",
     maxSystems: 3,
-    description: "For solo founders and early startups",
+    description: "For solo founders and early-stage startups",
     icon: Flash,
     color: "text-blue-600",
     bgColor: "bg-blue-100 dark:bg-blue-900/30",
     borderColor: "border-blue-300 dark:border-blue-700",
     features: [
       "Up to 3 AI systems",
-      "AI-powered document generation",
-      "10,000 events/month",
-      "Email support",
+      "10 documents/month (DOCX + PDF)",
+      "5 Quick Comply sessions/month",
+      "Email support (24h)",
     ],
   },
   {
-    id: "growth",
-    name: "Growth",
+    id: "professional",
+    name: "Professional",
     price: 299,
     currency: "€",
     maxSystems: 10,
-    description: "For growing organizations",
+    description: "For growing companies with multiple AI systems",
     icon: Crown,
     color: "text-brand-600",
     bgColor: "bg-brand-100 dark:bg-brand-900/30",
     borderColor: "border-brand-300 dark:border-brand-700",
     features: [
       "Up to 10 AI systems",
-      "SDK integration",
-      "Audit trail & HITL",
-      "100,000 events/month",
+      "Unlimited documents",
+      "SDK & API access",
+      "Audit trail",
       "Email + Chat support",
     ],
   },
   {
-    id: "scale",
-    name: "Scale",
-    price: 999,
+    id: "business",
+    name: "Business",
+    price: 699,
     currency: "€",
-    maxSystems: 25,
-    description: "For enterprises with advanced needs",
+    maxSystems: 30,
+    description: "For organizations with extensive AI portfolios",
     icon: Building,
     color: "text-purple-600",
     bgColor: "bg-purple-100 dark:bg-purple-900/30",
     borderColor: "border-purple-300 dark:border-purple-700",
     features: [
-      "Up to 25 AI systems",
-      "Certification badges",
-      "12-month log retention",
-      "500,000 events/month",
-      "Priority support",
+      "Up to 30 AI systems",
+      "Certification badges & custom branding",
+      "Enterprise document formatting",
+      "Unlimited Quick Comply sessions",
+      "Priority support (4h)",
     ],
   },
 ];
 
 function getRecommendedTier(systemCount: number): PricingTier {
-  if (systemCount <= 2) return PRICING_TIERS[0]; // Free
-  if (systemCount <= 3) return PRICING_TIERS[1]; // Professional
-  if (systemCount <= 10) return PRICING_TIERS[2]; // Growth
-  if (systemCount <= 25) return PRICING_TIERS[3]; // Scale
-  return PRICING_TIERS[3]; // Scale (with enterprise note)
+  if (systemCount <= 1) return PRICING_TIERS[0]; // Free
+  if (systemCount <= 3) return PRICING_TIERS[1]; // Starter
+  if (systemCount <= 10) return PRICING_TIERS[2]; // Professional
+  if (systemCount <= 30) return PRICING_TIERS[3]; // Business
+  return PRICING_TIERS[3]; // Business (with enterprise note)
 }
 
 function getTierIndex(systemCount: number): number {
-  if (systemCount <= 2) return 0;
+  if (systemCount <= 1) return 0;
   if (systemCount <= 3) return 1;
   if (systemCount <= 10) return 2;
   return 3;
@@ -123,7 +123,7 @@ export function PricingRecommendation({
   const recommendedTier = getRecommendedTier(totalSystems);
   const recommendedIndex = getTierIndex(totalSystems);
   const isFree = recommendedTier.id === "free";
-  const needsEnterprise = totalSystems > 25;
+  const needsEnterprise = totalSystems > 30;
 
   return (
     <section className="mb-8 sm:mb-12">
@@ -170,7 +170,7 @@ export function PricingRecommendation({
                     FREE
                   </span>
                 )}
-                {!isFree && recommendedTier.id === "growth" && (
+                {!isFree && recommendedTier.id === "professional" && (
                   <span className="px-2 py-0.5 rounded-full bg-brand-200 dark:bg-brand-800 text-xs font-semibold text-brand-700 dark:text-brand-300">
                     MOST POPULAR
                   </span>
@@ -349,7 +349,7 @@ export function PricingRecommendation({
               <Building size={20} className="text-purple-600 shrink-0 mt-0.5" variant="Bold" />
               <div>
                 <p className="text-sm font-semibold text-purple-800 dark:text-purple-200">
-                  Need more than 25 AI systems?
+                  Need more than 30 AI systems?
                 </p>
                 <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
                   Contact our sales team for custom enterprise pricing with unlimited AI systems, 

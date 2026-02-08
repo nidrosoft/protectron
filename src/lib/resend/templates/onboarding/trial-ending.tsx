@@ -106,28 +106,28 @@ export const TrialEndingEmail = ({
                 <Text style={planName}>STARTER</Text>
                 <Text style={planPrice}>€99<span style={planPeriod}>/mo</span></Text>
                 <Text style={planFeature}>• 3 AI systems</Text>
-                <Text style={planFeature}>• 10K events/mo</Text>
+                <Text style={planFeature}>• 10 documents/mo</Text>
                 <Text style={planFeature}>• Email support</Text>
               </Section>
               <Section style={pricingBoxPopular}>
                 <Text style={popularBadge}>POPULAR</Text>
-                <Text style={planName}>GROWTH</Text>
+                <Text style={planName}>PROFESSIONAL</Text>
                 <Text style={planPrice}>€299<span style={planPeriod}>/mo</span></Text>
                 <Text style={planFeature}>• 10 AI systems</Text>
-                <Text style={planFeature}>• 100K events/mo</Text>
-                <Text style={planFeature}>• Priority support</Text>
+                <Text style={planFeature}>• Unlimited documents</Text>
+                <Text style={planFeature}>• SDK & API access</Text>
               </Section>
               <Section style={pricingBox}>
-                <Text style={planName}>SCALE</Text>
-                <Text style={planPrice}>€599<span style={planPeriod}>/mo</span></Text>
-                <Text style={planFeature}>• 25 AI systems</Text>
-                <Text style={planFeature}>• 500K events/mo</Text>
-                <Text style={planFeature}>• Dedicated support</Text>
+                <Text style={planName}>BUSINESS</Text>
+                <Text style={planPrice}>€699<span style={planPeriod}>/mo</span></Text>
+                <Text style={planFeature}>• 30 AI systems</Text>
+                <Text style={planFeature}>• Custom branding</Text>
+                <Text style={planFeature}>• Priority support</Text>
               </Section>
             </Section>
 
             <Text style={allPlansInclude}>
-              All plans include: Full requirement tracking, document generation, evidence management, certification badges, and email support.
+              All plans include: Quick Comply AI chat, compliance tracking, DOCX + PDF export, document generation, and email support.
             </Text>
 
             <Section style={buttonContainer}>

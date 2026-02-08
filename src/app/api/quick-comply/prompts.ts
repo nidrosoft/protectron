@@ -96,21 +96,32 @@ function SUBSCRIPTION_CONTEXT(tier: string): string {
     starter: `
 **STARTER TIER - CORE COMPLIANCE**
 - Generate the 7 core compliance documents
-- If user needs QMS, post-market monitoring, or other advanced docs, mention Pro upgrade
+- If user needs QMS, post-market monitoring, or other advanced docs, mention Professional upgrade
 - Can create up to 3 AI systems
-- Say: "That document is available on our Pro plan. For now, I can help you with the core compliance documents."`,
+- Say: "That document is available on our Professional plan. For now, I can help you with the core compliance documents."`,
 
-    pro: `
-**PRO TIER - FULL PROVIDER COMPLIANCE**
+    professional: `
+**PROFESSIONAL TIER - FULL PROVIDER COMPLIANCE**
 - Generate all 20 provider compliance documents
-- If user asks about GPAI or Deployer modules, mention Enterprise
-- Full access to all provider features`,
+- If user asks about GPAI or Deployer modules, mention Business or Enterprise
+- Full access to all provider features
+- SDK & API access, audit trail included`,
+
+    business: `
+**BUSINESS TIER - ENTERPRISE FEATURES**
+- All provider compliance documents
+- Certification badges & custom branding
+- Enterprise-quality document formatting
+- Unlimited Quick Comply sessions
+- If user asks about GPAI module or SSO, mention Enterprise`,
 
     enterprise: `
 **ENTERPRISE TIER - FULL ACCESS**
 - All features unlocked - no restrictions
 - GPAI module available
 - Deployer module available
+- SSO/SAML support
+- Dedicated account manager
 - Never mention upgrades - they have everything`,
   };
 
@@ -738,9 +749,9 @@ function DOCUMENT_GENERATION_RULES(tier: string): string {
   ];
 
   let availableDocs: string[];
-  if (tier === "enterprise") {
+  if (tier === "enterprise" || tier === "business") {
     availableDocs = [...proDocuments, "fria"];
-  } else if (tier === "pro") {
+  } else if (tier === "professional") {
     availableDocs = proDocuments;
   } else if (tier === "starter") {
     availableDocs = coreDocuments;

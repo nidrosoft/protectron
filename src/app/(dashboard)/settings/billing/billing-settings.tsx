@@ -72,13 +72,13 @@ export const BillingSettings = () => {
     { 
       label: "AI Systems", 
       used: 0, // TODO: Fetch from API
-      limit: limits?.ai_systems ?? 0, 
+      limit: limits?.ai_systems ?? 1, 
       icon: Cpu 
     },
     { 
-      label: "Storage (GB)", 
+      label: "Documents/mo", 
       used: 0, // TODO: Fetch from API
-      limit: limits?.storage_gb ?? 0, 
+      limit: limits?.documents_per_month ?? 2, 
       icon: FolderOpen 
     },
     { 
@@ -88,9 +88,9 @@ export const BillingSettings = () => {
       icon: People 
     },
     { 
-      label: "Audit Reports/mo", 
+      label: "Quick Comply/mo", 
       used: 0, // TODO: Fetch from API
-      limit: limits?.audit_reports_per_month ?? 0, 
+      limit: limits?.quick_comply_sessions ?? 1, 
       icon: Chart 
     },
   ];
@@ -178,9 +178,9 @@ export const BillingSettings = () => {
                       </div>
                       <p className="mt-1 text-2xl font-bold text-primary">
                         {subscription?.isFreePlan ? (
-                          "$0"
+                          "€0"
                         ) : (
-                          `$${((subscription?.plan?.priceMonthly || 0) / 100).toFixed(0)}`
+                          `€${((subscription?.plan?.priceMonthly || 0) / 100).toFixed(0)}`
                         )}
                         <span className="text-sm font-normal text-tertiary">/month</span>
                       </p>

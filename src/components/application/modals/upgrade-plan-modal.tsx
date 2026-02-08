@@ -25,12 +25,13 @@ import { CloseButton } from "@/components/base/buttons/close-button";
 import { Badge } from "@/components/base/badges/badges";
 import { cx } from "@/utils/cx";
 
-type PlanId = "professional" | "growth" | "scale";
+type PlanId = "starter" | "professional" | "business";
 
 interface Plan {
   id: PlanId;
   name: string;
   price: number;
+  annualPrice: number;
   currency?: string;
   description: string;
   icon: typeof Crown;
@@ -39,77 +40,84 @@ interface Plan {
   popular?: boolean;
   features: {
     aiSystems: number | "Unlimited";
-    aiAgents: number | string;
-    eventsPerMonth: string;
-    sdkIntegration: boolean;
+    documents: string;
+    quickComplySessions: string;
+    exportFormats: string;
+    sdkApiAccess: boolean;
     auditTrail: boolean;
-    hitlRules: boolean;
-    logRetention: string;
     certificationBadges: boolean;
+    customBranding: boolean;
+    teamMembers: number;
     support: string;
   };
 }
 
 const plans: Plan[] = [
   {
-    id: "professional",
-    name: "Professional",
+    id: "starter",
+    name: "Starter",
     price: 99,
-    description: "For solo founders and early startups",
+    annualPrice: 79,
+    description: "For solo founders and early-stage startups",
     icon: Flash,
     color: "text-blue-600",
     bgColor: "bg-blue-100",
     features: {
       aiSystems: 3,
-      aiAgents: "1*",
-      eventsPerMonth: "10,000",
-      sdkIntegration: false,
+      documents: "10/month",
+      quickComplySessions: "5/month",
+      exportFormats: "DOCX + PDF",
+      sdkApiAccess: false,
       auditTrail: false,
-      hitlRules: false,
-      logRetention: "N/A",
       certificationBadges: false,
-      support: "Email",
+      customBranding: false,
+      teamMembers: 2,
+      support: "Email (24h)",
     },
   },
   {
-    id: "growth",
-    name: "Growth",
+    id: "professional",
+    name: "Professional",
     price: 299,
-    description: "For growing organizations with multiple AI systems",
+    annualPrice: 249,
+    description: "For growing companies with multiple AI systems",
     icon: Crown,
     color: "text-brand-600",
     bgColor: "bg-brand-100",
     popular: true,
     features: {
       aiSystems: 10,
-      aiAgents: "3",
-      eventsPerMonth: "100,000",
-      sdkIntegration: true,
+      documents: "Unlimited",
+      quickComplySessions: "25/month",
+      exportFormats: "DOCX + PDF",
+      sdkApiAccess: true,
       auditTrail: true,
-      hitlRules: true,
-      logRetention: "6 months",
       certificationBadges: false,
+      customBranding: false,
+      teamMembers: 5,
       support: "Email + Chat",
     },
   },
   {
-    id: "scale",
-    name: "Scale",
-    price: 999,
-    description: "For enterprises with advanced compliance needs",
+    id: "business",
+    name: "Business",
+    price: 699,
+    annualPrice: 599,
+    description: "For organizations with extensive AI portfolios",
     icon: Building,
     color: "text-purple-600",
     bgColor: "bg-purple-100",
     features: {
-      aiSystems: 25,
-      aiAgents: "10",
-      eventsPerMonth: "500,000",
-      sdkIntegration: true,
+      aiSystems: 30,
+      documents: "Unlimited",
+      quickComplySessions: "Unlimited",
+      exportFormats: "DOCX + PDF",
+      sdkApiAccess: true,
       auditTrail: true,
-      hitlRules: true,
-      logRetention: "12 months",
       certificationBadges: true,
-      support: "Priority",
+      customBranding: true,
+      teamMembers: 15,
+      support: "Priority (4h)",
     },
   },
 ];
@@ -280,41 +288,46 @@ export const UpgradePlanModal = ({
                         <div className="mt-4">
                           <span className="text-3xl font-bold text-primary">{plan.currency || "€"}{plan.price}</span>
                           <span className="text-sm text-tertiary">/month</span>
+                          <p className="text-xs text-tertiary mt-0.5">
+                            €{plan.annualPrice}/mo billed annually
+                          </p>
                         </div>
 
                         <div className="mt-4 flex-1 border-t border-secondary pt-4">
-                          {/* Always included features first */}
+                          {/* Core limits */}
                           <FeatureRow label="AI Systems" value={plan.features.aiSystems} />
-                          <FeatureRow label="AI Agents (SDK)" value={plan.features.aiAgents} />
-                          <FeatureRow label="Events/month" value={plan.features.eventsPerMonth} />
+                          <FeatureRow label="Documents" value={plan.features.documents} />
+                          <FeatureRow label="Quick Comply" value={plan.features.quickComplySessions} />
+                          <FeatureRow label="Export" value={plan.features.exportFormats} />
+                          <FeatureRow label="Team Members" value={plan.features.teamMembers} />
                           <FeatureRow label="Support" value={plan.features.support} />
                           
-                          {/* Conditional features - included ones first */}
-                          {plan.features.sdkIntegration && (
-                            <FeatureRow label="SDK Integration" value={plan.features.sdkIntegration} isBoolean />
+                          {/* Boolean features - included first */}
+                          {plan.features.sdkApiAccess && (
+                            <FeatureRow label="SDK & API Access" value={plan.features.sdkApiAccess} isBoolean />
                           )}
                           {plan.features.auditTrail && (
-                            <FeatureRow label="Audit Trail & HITL" value={plan.features.auditTrail} isBoolean />
-                          )}
-                          {plan.features.logRetention !== "N/A" && (
-                            <FeatureRow label="Log Retention" value={plan.features.logRetention} />
+                            <FeatureRow label="Audit Trail" value={plan.features.auditTrail} isBoolean />
                           )}
                           {plan.features.certificationBadges && (
                             <FeatureRow label="Certification Badges" value={plan.features.certificationBadges} isBoolean />
                           )}
-                          
-                          {/* Not included features last */}
-                          {!plan.features.sdkIntegration && (
-                            <FeatureRow label="SDK Integration" value={plan.features.sdkIntegration} isBoolean />
+                          {plan.features.customBranding && (
+                            <FeatureRow label="Custom Branding" value={plan.features.customBranding} isBoolean />
+                          )}
+
+                          {/* Not included - shown last */}
+                          {!plan.features.sdkApiAccess && (
+                            <FeatureRow label="SDK & API Access" value={false} isBoolean />
                           )}
                           {!plan.features.auditTrail && (
-                            <FeatureRow label="Audit Trail & HITL" value={plan.features.auditTrail} isBoolean />
-                          )}
-                          {plan.features.logRetention === "N/A" && (
-                            <FeatureRow label="Log Retention" value={false} isBoolean />
+                            <FeatureRow label="Audit Trail" value={false} isBoolean />
                           )}
                           {!plan.features.certificationBadges && (
-                            <FeatureRow label="Certification Badges" value={plan.features.certificationBadges} isBoolean />
+                            <FeatureRow label="Certification Badges" value={false} isBoolean />
+                          )}
+                          {!plan.features.customBranding && (
+                            <FeatureRow label="Custom Branding" value={false} isBoolean />
                           )}
                         </div>
 

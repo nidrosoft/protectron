@@ -268,7 +268,13 @@ export function getUpgradeMessage(
  * Gets the next tier above the current one.
  */
 function getNextTier(currentTier: SubscriptionTier): SubscriptionTier | null {
-  const tierOrder: SubscriptionTier[] = ["free", "starter", "pro", "enterprise"];
+  const tierOrder: SubscriptionTier[] = [
+    "free",
+    "starter",
+    "professional",
+    "business",
+    "enterprise",
+  ];
   const currentIndex = tierOrder.indexOf(currentTier);
   if (currentIndex === -1 || currentIndex >= tierOrder.length - 1) return null;
   return tierOrder[currentIndex + 1];

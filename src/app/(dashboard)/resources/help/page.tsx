@@ -96,7 +96,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: "Is my data secure?",
-        answer: "Yes. We're SOC 2 compliant and use enterprise-grade encryption. Your compliance data is hosted in EU servers, ensuring full GDPR compliance. EU data residency add-on available for €99/month.",
+        answer: "Yes. We're SOC 2 compliant and use enterprise-grade encryption. Your compliance data is hosted in EU servers, ensuring full GDPR compliance. EU data residency is included in all paid plans.",
       },
     ],
   },
@@ -108,7 +108,7 @@ const faqCategories: FAQCategory[] = [
     items: [
       {
         question: "Why is Protectron cheaper than Credo AI?",
-        answer: "Enterprise platforms like Credo AI charge €50,000+ per year because they're built for Fortune 500 companies. We've automated the heavy lifting so startups and SMBs can achieve the same compliance at 1/10th the cost — starting at just €99/month.",
+        answer: "Enterprise platforms like Credo AI charge €50,000+ per year because they're built for Fortune 500 companies. We've automated the heavy lifting so startups and SMBs can achieve the same compliance at a fraction of the cost — starting at just €99/month with our Starter plan.",
       },
       {
         question: "Can I change my plan later?",
