@@ -1002,6 +1002,76 @@ export type Database = {
           },
         ]
       }
+      document_generation_log: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string | null
+          document_id: string | null
+          ai_system_id: string | null
+          document_type: string
+          tokens_input: number | null
+          tokens_output: number | null
+          model_used: string | null
+          generation_time_ms: number | null
+          status: string | null
+          error_message: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id?: string | null
+          document_id?: string | null
+          ai_system_id?: string | null
+          document_type: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          model_used?: string | null
+          generation_time_ms?: number | null
+          status?: string | null
+          error_message?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string | null
+          document_id?: string | null
+          ai_system_id?: string | null
+          document_type?: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          model_used?: string | null
+          generation_time_ms?: number | null
+          status?: string | null
+          error_message?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_generation_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_generation_log_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_generation_log_ai_system_id_fkey"
+            columns: ["ai_system_id"]
+            isOneToOne: false
+            referencedRelation: "ai_systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           ai_system_id: string | null
@@ -1233,6 +1303,9 @@ export type Database = {
           slug: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          subscription_tier: string | null
+          token_reset_date: string | null
+          tokens_used_this_month: number | null
           trust_center_enabled: boolean | null
           updated_at: string | null
           vat_number: string | null
@@ -1253,6 +1326,9 @@ export type Database = {
           slug: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          subscription_tier?: string | null
+          token_reset_date?: string | null
+          tokens_used_this_month?: number | null
           trust_center_enabled?: boolean | null
           updated_at?: string | null
           vat_number?: string | null
@@ -1273,6 +1349,9 @@ export type Database = {
           slug?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          subscription_tier?: string | null
+          token_reset_date?: string | null
+          tokens_used_this_month?: number | null
           trust_center_enabled?: boolean | null
           updated_at?: string | null
           vat_number?: string | null
@@ -1316,6 +1395,90 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quick_comply_sessions: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string
+          ai_system_id: string | null
+          status: string
+          current_section: string | null
+          progress_percentage: number | null
+          form_data: Json | null
+          sections_completed: Json | null
+          chat_messages: Json | null
+          risk_classification: string | null
+          applicable_articles: Json | null
+          documents_generated: Json | null
+          subscription_tier: string | null
+          tokens_used: number | null
+          started_at: string | null
+          completed_at: string | null
+          last_activity_at: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id: string
+          ai_system_id?: string | null
+          status?: string
+          current_section?: string | null
+          progress_percentage?: number | null
+          form_data?: Json | null
+          sections_completed?: Json | null
+          chat_messages?: Json | null
+          risk_classification?: string | null
+          applicable_articles?: Json | null
+          documents_generated?: Json | null
+          subscription_tier?: string | null
+          tokens_used?: number | null
+          started_at?: string | null
+          completed_at?: string | null
+          last_activity_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string
+          ai_system_id?: string | null
+          status?: string
+          current_section?: string | null
+          progress_percentage?: number | null
+          form_data?: Json | null
+          sections_completed?: Json | null
+          chat_messages?: Json | null
+          risk_classification?: string | null
+          applicable_articles?: Json | null
+          documents_generated?: Json | null
+          subscription_tier?: string | null
+          tokens_used?: number | null
+          started_at?: string | null
+          completed_at?: string | null
+          last_activity_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quick_comply_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quick_comply_sessions_ai_system_id_fkey"
+            columns: ["ai_system_id"]
+            isOneToOne: false
+            referencedRelation: "ai_systems"
             referencedColumns: ["id"]
           },
         ]

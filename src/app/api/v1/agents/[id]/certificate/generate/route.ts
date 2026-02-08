@@ -58,7 +58,7 @@ export async function POST(
       .select("status", { count: "exact" })
       .eq("ai_system_id", id);
 
-    const completedRequirements = requirements?.filter((r) => r.status === "compliant").length || 0;
+    const completedRequirements = requirements?.filter((r) => r.status === "compliant" || r.status === "completed").length || 0;
 
     // Get HITL rules count
     const { count: hitlRulesCount } = await supabase

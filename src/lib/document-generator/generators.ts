@@ -38,6 +38,17 @@ import type {
   DocumentMetadata,
   GenerateDocumentOptions,
 } from "./types";
+import {
+  createCoverPage,
+  createDocumentControlSection,
+  createTableOfContentsSection,
+  createEnterpriseHeader,
+  createEnterpriseFooter,
+  createSignatureBlock,
+  createCertificationBadge,
+  type EnterpriseDocumentOptions,
+  type DocumentQuality,
+} from "./enterprise-format";
 
 /**
  * Create the base document structure with Protectron branding
@@ -317,6 +328,223 @@ function createBaseDocument(
       },
     ],
   });
+}
+
+/**
+ * Create an enterprise-quality document with enhanced formatting.
+ * Adds cover page, document control, TOC, signature block, and certification
+ * badge based on the quality level.
+ *
+ * Quality levels:
+ * - basic:      Same as createBaseDocument (starter plans)
+ * - standard:   Cover page + document control + enhanced headers/footers (pro plans)
+ * - enterprise: Full cover page + document control + TOC + signature block +
+ *               certification badge + custom branding (enterprise plans)
+ */
+function createEnterpriseDocument(
+  metadata: DocumentMetadata,
+  content: DocumentElement[],
+  enterpriseOpts: EnterpriseDocumentOptions
+): Document {
+  const quality = enterpriseOpts.quality;
+
+  // For basic quality, fallback to the standard document
+  if (quality === "basic") {
+    return createBaseDocument(metadata, content);
+  }
+
+  // Build page children in order
+  // Use `any[]` for children since docx accepts Paragraph, Table,
+  // TableOfContents, and other FileChild subtypes
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const children: any[] = [];
+
+  // 1. Cover page (standard + enterprise)
+  children.push(...createCoverPage(enterpriseOpts));
+
+  // 2. Document control section (standard + enterprise)
+  children.push(...createDocumentControlSection(enterpriseOpts));
+
+  // 3. Table of contents (enterprise only)
+  if (quality === "enterprise") {
+    children.push(...createTableOfContentsSection());
+  }
+
+  // 4. Main content
+  children.push(...content);
+
+  // 5. Signature block (enterprise only)
+  if (quality === "enterprise") {
+    children.push(...createSignatureBlock(enterpriseOpts));
+  }
+
+  // 6. Certification badge (enterprise only)
+  if (quality === "enterprise") {
+    children.push(...createCertificationBadge(enterpriseOpts));
+  }
+
+  return new Document({
+    features: {
+      updateFields: quality === "enterprise", // Auto-update TOC fields
+    },
+    styles: {
+      default: {
+        document: {
+          run: {
+            font: "Inter",
+            size: FONT_SIZES.body,
+          },
+        },
+      },
+      paragraphStyles: [
+        {
+          id: "Title",
+          name: "Title",
+          basedOn: "Normal",
+          run: {
+            size: FONT_SIZES.title,
+            bold: true,
+            color: enterpriseOpts.primaryColor || COLORS.primary,
+            font: "Inter",
+          },
+          paragraph: {
+            spacing: { before: 0, after: 200 },
+            alignment: AlignmentType.CENTER,
+          },
+        },
+        {
+          id: "Heading1",
+          name: "Heading 1",
+          basedOn: "Normal",
+          next: "Normal",
+          quickFormat: true,
+          run: {
+            size: FONT_SIZES.heading1,
+            bold: true,
+            color: enterpriseOpts.primaryColor || COLORS.primary,
+            font: "Inter",
+          },
+          paragraph: {
+            spacing: { before: 400, after: 200 },
+            outlineLevel: 0,
+          },
+        },
+        {
+          id: "Heading2",
+          name: "Heading 2",
+          basedOn: "Normal",
+          next: "Normal",
+          quickFormat: true,
+          run: {
+            size: FONT_SIZES.heading2,
+            bold: true,
+            color: COLORS.secondary,
+            font: "Inter",
+          },
+          paragraph: {
+            spacing: { before: 300, after: 150 },
+            outlineLevel: 1,
+          },
+        },
+        {
+          id: "Heading3",
+          name: "Heading 3",
+          basedOn: "Normal",
+          next: "Normal",
+          quickFormat: true,
+          run: {
+            size: FONT_SIZES.heading3,
+            bold: true,
+            color: COLORS.secondary,
+            font: "Inter",
+          },
+          paragraph: {
+            spacing: { before: 200, after: 100 },
+            outlineLevel: 2,
+          },
+        },
+      ],
+    },
+    numbering: {
+      config: [
+        {
+          reference: "bullet-list",
+          levels: [
+            {
+              level: 0,
+              format: LevelFormat.BULLET,
+              text: "•",
+              alignment: AlignmentType.LEFT,
+              style: {
+                paragraph: {
+                  indent: { left: 720, hanging: 360 },
+                },
+              },
+            },
+          ],
+        },
+        {
+          reference: "numbered-list",
+          levels: [
+            {
+              level: 0,
+              format: LevelFormat.DECIMAL,
+              text: "%1.",
+              alignment: AlignmentType.LEFT,
+              style: {
+                paragraph: {
+                  indent: { left: 720, hanging: 360 },
+                },
+              },
+            },
+          ],
+        },
+      ],
+    },
+    sections: [
+      {
+        properties: {
+          page: {
+            margin: PAGE.margin,
+          },
+        },
+        headers: {
+          default: createEnterpriseHeader(enterpriseOpts),
+        },
+        footers: {
+          default: createEnterpriseFooter(enterpriseOpts),
+        },
+        children,
+      },
+    ],
+  });
+}
+
+/**
+ * Build EnterpriseDocumentOptions from GenerateDocumentOptions + metadata
+ */
+function buildEnterpriseOpts(
+  metadata: DocumentMetadata,
+  options: GenerateDocumentOptions,
+  documentType: string
+): EnterpriseDocumentOptions {
+  return {
+    quality: options.quality || "basic",
+    title: metadata.title,
+    subtitle: metadata.subtitle,
+    documentType,
+    version: metadata.version,
+    date: metadata.date ? new Date(metadata.date) : new Date(),
+    organizationName: options.organizationName || metadata.companyName || COMPANY.name,
+    preparedBy: options.preparedBy || metadata.preparedBy || COMPANY.name,
+    contactEmail: options.contactEmail,
+    aiSystemName: options.aiSystemName,
+    riskLevel: options.riskLevel,
+    confidentiality: options.confidentiality,
+    euAiActArticles: options.euAiActArticles,
+    certificationNumber: options.certificationNumber,
+    primaryColor: options.primaryColor,
+  };
 }
 
 /**
@@ -678,7 +906,44 @@ function generateModelCardContent(data: ModelCardData): DocumentElement[] {
 }
 
 /**
- * Main document generation function
+ * Generate a universal document from AI-generated sections.
+ * Works for any document type — just pass the AI output and metadata.
+ * Supports enterprise formatting via options.quality.
+ */
+export async function generateUniversalDocument(
+  sections: { title: string; content: string }[],
+  metadata: DocumentMetadata,
+  systemInfo: { name: string; description?: string; riskLevel?: string; status?: string },
+  options: GenerateDocumentOptions = { format: "docx", download: true }
+): Promise<Blob> {
+  const content = generateFromAISections(sections, systemInfo);
+
+  let doc: Document;
+
+  if (options.quality && options.quality !== "basic") {
+    const enterpriseOpts = buildEnterpriseOpts(metadata, {
+      ...options,
+      aiSystemName: options.aiSystemName || systemInfo.name,
+      riskLevel: options.riskLevel || systemInfo.riskLevel,
+    }, "technical");
+    doc = createEnterpriseDocument(metadata, content, enterpriseOpts);
+  } else {
+    doc = createBaseDocument(metadata, content);
+  }
+
+  const blob = await Packer.toBlob(doc);
+
+  if (options.download) {
+    const filename = `${metadata.title.replace(/[^a-zA-Z0-9]/g, "_")}.docx`;
+    saveAs(blob, filename);
+  }
+
+  return blob;
+}
+
+/**
+ * Main document generation function.
+ * Supports enterprise formatting via options.quality.
  */
 export async function generateDocument(
   data: DocumentData,
@@ -703,7 +968,20 @@ export async function generateDocument(
       throw new Error(`Unknown document type: ${(data as DocumentData).type}`);
   }
 
-  const doc = createBaseDocument(data.metadata, content);
+  let doc: Document;
+
+  if (options.quality && options.quality !== "basic") {
+    const aiSystem = "aiSystem" in data ? data.aiSystem : undefined;
+    const enterpriseOpts = buildEnterpriseOpts(data.metadata, {
+      ...options,
+      aiSystemName: options.aiSystemName || aiSystem?.name,
+      riskLevel: options.riskLevel || aiSystem?.riskLevel,
+    }, data.type);
+    doc = createEnterpriseDocument(data.metadata, content, enterpriseOpts);
+  } else {
+    doc = createBaseDocument(data.metadata, content);
+  }
+
   const blob = await Packer.toBlob(doc);
 
   if (options.download) {
@@ -750,6 +1028,18 @@ export function getDocumentTypeName(type: string): string {
     monitoring_log: "Monitoring Log Template",
     ai_disclosure_notice: "AI Disclosure Notice",
     synthetic_content_policy: "Synthetic Content Policy",
+    // Phase 4 - Missing EU AI Act Documents
+    qms: "Quality Management System",
+    post_market_monitoring: "Post-Market Monitoring Plan",
+    incident_response_plan: "Incident Response Plan",
+    fria: "Fundamental Rights Impact Assessment",
+    cybersecurity_assessment: "Cybersecurity Assessment",
+    transparency_notice: "Transparency Notice",
+    eu_db_registration: "EU Database Registration Form",
+    ce_marking: "CE Marking Declaration",
+    conformity_declaration: "EU Declaration of Conformity",
+    change_management: "Change Management Procedures",
+    standards_mapping: "Standards Mapping Document",
   };
   return names[type] || type;
 }

@@ -1,10 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Warning2 } from "iconsax-react";
+import { Warning2, ArrowRight2 } from "iconsax-react";
+import { ArrowRight } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
+import { cx } from "@/utils/cx";
 import { 
   riskLevelConfig, 
   statusConfig, 
@@ -29,6 +31,26 @@ export const SystemCardGrid = ({ system }: SystemCardGridProps) => {
   const progress = Math.round((system.requirementsComplete / system.requirementsTotal) * 100);
   const isAgent = system.type === "ai_agent";
   const TypeIcon = typeConfig.icon;
+  
+  // Determine card styling and CTA based on status
+  const needsAttention = system.status === "not_started";
+  const isInProgress = system.status === "in_progress";
+  
+  // Get CTA text and color based on status
+  // "Start Compliance" = primary (needs attention, vibrant)
+  // "Continue Setup" = secondary (already in progress, calmer)
+  // "View Details" = secondary (neutral)
+  const getCtaConfig = () => {
+    if (isInProgress) {
+      return { text: "Continue Setup", color: "secondary" as const, highlight: true };
+    }
+    if (needsAttention) {
+      return { text: "Start Compliance", color: "primary" as const, highlight: true };
+    }
+    return { text: "View Details", color: "secondary" as const, highlight: false };
+  };
+  
+  const ctaConfig = getCtaConfig();
 
   return (
     <div
@@ -98,17 +120,42 @@ export const SystemCardGrid = ({ system }: SystemCardGridProps) => {
       </div>
 
       <div className="mt-4 pt-4 border-t border-secondary">
-        <Button 
-          size="sm" 
-          color={system.status === "in_progress" ? "primary" : "secondary"}
-          className="w-full"
-          onClick={(e: React.MouseEvent) => {
-            e.stopPropagation();
-            router.push(`/ai-systems/${system.id}`);
-          }}
-        >
-          {system.status === "in_progress" ? "Continue Setup" : "View Details"}
-        </Button>
+        {/* Custom gradient buttons for actionable states */}
+        {needsAttention ? (
+          <button
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-sm transition-all"
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              router.push(`/ai-systems/${system.id}`);
+            }}
+          >
+            Start Compliance
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        ) : isInProgress ? (
+          <button
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 shadow-sm transition-all"
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              router.push(`/ai-systems/${system.id}`);
+            }}
+          >
+            Continue Setup
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        ) : (
+          <Button 
+            size="sm" 
+            color="secondary"
+            className="w-full"
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              router.push(`/ai-systems/${system.id}`);
+            }}
+          >
+            View Details
+          </Button>
+        )}
       </div>
     </div>
   );

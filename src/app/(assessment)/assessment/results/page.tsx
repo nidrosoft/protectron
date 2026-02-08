@@ -23,6 +23,7 @@ import {
   ShareFunctionality,
   ComplianceConfidenceMeter,
   PricingRecommendation,
+  PostAssessmentDecision,
 } from "./sections";
 import {
   calculateEnhancedResults,
@@ -85,53 +86,83 @@ export default function EnhancedAssessmentResultsPage() {
     }
   };
 
+  // Core function to save assessment data and AI systems to the database
+  const saveAssessmentData = useCallback(async () => {
+    if (!data || !results) return;
+
+    const supabase = createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("organization_id")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.organization_id) {
+        // Update organization with assessment data
+        await supabase
+          .from("organizations")
+          .update({
+            industry: data.industry || null,
+            company_size: data.companySize || null,
+            country: data.country || null,
+            has_eu_presence: results.hasEUExposure,
+            // Set default subscription tier to free if not already set
+            subscription_tier: "free",
+          })
+          .eq("id", profile.organization_id);
+
+        // Create AI systems based on detected systems
+        for (const system of results.detectedSystems) {
+          await supabase.from("ai_systems").insert({
+            organization_id: profile.organization_id,
+            created_by: user.id,
+            name: system.name,
+            description: `AI system identified during initial assessment: ${system.riskReason}`,
+            system_type: system.type === "chatbot" || system.type === "genai" ? "llm_application" : "ml_model",
+            risk_level: system.riskLevel,
+            category: system.category,
+            compliance_status: "not_started",
+            compliance_progress: 0,
+            serves_eu: results.hasEUExposure,
+            assessment_data: {
+              source: "initial_assessment",
+              assessed_at: new Date().toISOString(),
+              company_name: data.companyName,
+              industry: data.industry,
+              compliance_score: results.complianceScore,
+              risk_reason: system.riskReason,
+              requirements_count: system.requirementsCount,
+              documents_needed: system.documentsNeeded,
+              // New compliance context
+              ai_role: data.aiRole || null,
+              serves_public_sector: data.servesPublicSector || false,
+              has_vulnerable_groups: data.hasVulnerableGroups || false,
+              deployment_environment: data.deploymentEnvironment || null,
+              has_existing_qms: data.hasExistingQMS || false,
+              has_incident_response: data.hasIncidentResponsePlan || false,
+              has_post_market_monitoring: data.hasPostMarketMonitoring || false,
+              existing_compliance_frameworks: data.existingCompliance || [],
+            },
+          });
+        }
+      }
+    }
+
+    localStorage.removeItem("assessmentData");
+  }, [data, results]);
+
+  // Save assessment data and navigate to the dashboard
   const handleContinueToDashboard = async () => {
     if (!data || !results) return;
     
     setIsSaving(true);
     
     try {
-      const supabase = createClient();
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("organization_id")
-          .eq("id", user.id)
-          .single();
-
-        if (profile?.organization_id) {
-          // Create AI systems based on detected systems
-          for (const system of results.detectedSystems) {
-            await supabase.from("ai_systems").insert({
-              organization_id: profile.organization_id,
-              created_by: user.id,
-              name: system.name,
-              description: `AI system identified during initial assessment: ${system.riskReason}`,
-              system_type: system.type === "chatbot" || system.type === "genai" ? "llm_application" : "ml_model",
-              risk_level: system.riskLevel,
-              category: system.category,
-              compliance_status: "not_started",
-              compliance_progress: 0,
-              serves_eu: results.hasEUExposure,
-              assessment_data: {
-                source: "initial_assessment",
-                assessed_at: new Date().toISOString(),
-                company_name: data.companyName,
-                industry: data.industry,
-                compliance_score: results.complianceScore,
-                risk_reason: system.riskReason,
-                requirements_count: system.requirementsCount,
-                documents_needed: system.documentsNeeded,
-              },
-            });
-          }
-        }
-      }
-
-      localStorage.removeItem("assessmentData");
+      await saveAssessmentData();
       
       addToast({
         title: "Assessment saved",
@@ -153,6 +184,36 @@ export default function EnhancedAssessmentResultsPage() {
       setIsSaving(false);
     }
   };
+
+  // Save assessment data and navigate to a specified destination (e.g., Quick Comply)
+  const handleSaveAndNavigate = useCallback(async (destination: string) => {
+    if (!data || !results) return;
+    
+    setIsSaving(true);
+    
+    try {
+      await saveAssessmentData();
+      
+      addToast({
+        title: "Assessment saved",
+        message: `${results.detectedSystems.length} AI system(s) added. Redirecting...`,
+        type: "success",
+      });
+
+      router.push(destination);
+      router.refresh();
+    } catch (error) {
+      console.error("Error saving assessment:", error);
+      addToast({
+        title: "Error",
+        message: "Failed to save assessment data",
+        type: "error",
+      });
+      throw error; // Re-throw so the calling component can handle it
+    } finally {
+      setIsSaving(false);
+    }
+  }, [data, results, saveAssessmentData, addToast, router]);
 
   // No data state
   if (!data) {
@@ -315,7 +376,15 @@ export default function EnhancedAssessmentResultsPage() {
           onGoToDashboard={handleContinueToDashboard}
         />
 
-        {/* Section 7: CTAs */}
+        {/* Post-Assessment Decision: Quick Comply vs Detailed Mode */}
+        <PostAssessmentDecision
+          results={results}
+          onGoToDashboard={handleContinueToDashboard}
+          onSaveAndNavigate={handleSaveAndNavigate}
+          isSaving={isSaving}
+        />
+
+        {/* Section 7: CTAs (Download Report + additional actions) */}
         <CTASection
           onDownloadReport={handleDownloadReport}
           onGoToDashboard={handleContinueToDashboard}

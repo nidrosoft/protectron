@@ -148,6 +148,18 @@ export default function DocumentsPage() {
     setIsDeleteModalOpen(true);
   };
 
+  const handleToggleStatus = async (doc: typeof documents[0]) => {
+    const newStatus = doc.status === "draft" ? "final" : "draft";
+    const result = await updateDocument(doc.id, { status: newStatus });
+    if (result) {
+      toast.addToast({ 
+        type: "success", 
+        title: "Status updated", 
+        message: `Document marked as ${newStatus === "final" ? "Final" : "Draft"}` 
+      });
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (selectedDocument) {
       const success = await deleteDocument(selectedDocument.id);
@@ -315,6 +327,8 @@ export default function DocumentsPage() {
                           onShare={() => handleShare(doc)}
                           onRename={() => handleRename(doc)}
                           onDelete={() => handleDelete(doc)}
+                          onToggleStatus={() => handleToggleStatus(doc)}
+                          currentStatus={doc.status}
                         />
                       </Table.Cell>
                     </Table.Row>

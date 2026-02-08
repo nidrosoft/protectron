@@ -25,6 +25,8 @@ import {
   Calendar,
   MessageQuestion as HelpIcon,
   Warning2,
+  Flash,
+  Medal,
 } from "iconsax-react";
 import { ChevronLeft, ChevronRight } from "@untitledui/icons";
 import type { Icon as IconSaxIcon } from "iconsax-react";
@@ -85,6 +87,17 @@ const getAISystemsBadge = (stats: AISystemsStats): React.ReactNode => {
 
 const getNavItems = (incidentsCount: number, aiSystemsStats: AISystemsStats): NavItemType[] => [
   {
+    label: "Quick Comply",
+    href: "/quick-comply",
+    icon: createIcon(Flash),
+    badge: (
+      <span className="ml-auto rounded-full bg-brand-100 px-1.5 py-0.5 text-[10px] font-semibold text-brand-700">
+        AI
+      </span>
+    ),
+    dataWalkthrough: "nav-quick-comply",
+  },
+  {
     label: "Dashboard",
     href: "/dashboard",
     icon: createIcon(Category),
@@ -113,6 +126,11 @@ const getNavItems = (incidentsCount: number, aiSystemsStats: AISystemsStats): Na
     href: "/documents",
     icon: createIcon(DocumentText),
     dataWalkthrough: "nav-documents",
+  },
+  {
+    label: "Certifications",
+    href: "/certifications",
+    icon: createIcon(Medal),
   },
   {
     label: "Evidence",

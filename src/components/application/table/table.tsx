@@ -2,7 +2,7 @@
 
 import type { ComponentPropsWithRef, HTMLAttributes, ReactNode, Ref, TdHTMLAttributes, ThHTMLAttributes } from "react";
 import { createContext, isValidElement, useContext } from "react";
-import { ArrowDown, ChevronSelectorVertical, Copy01, Download01, Edit01, Eye, HelpCircle, Share07, Trash01 } from "@untitledui/icons";
+import { ArrowDown, CheckCircle, ChevronSelectorVertical, Copy01, Download01, Edit01, Eye, HelpCircle, Share07, Trash01 } from "@untitledui/icons";
 import type {
     CellProps as AriaCellProps,
     ColumnProps as AriaColumnProps,
@@ -54,6 +54,8 @@ interface DocumentActionsDropdownProps {
     onShare?: () => void;
     onRename?: () => void;
     onDelete?: () => void;
+    onToggleStatus?: () => void;
+    currentStatus?: "draft" | "final";
 }
 
 export const DocumentActionsDropdown = ({
@@ -63,6 +65,8 @@ export const DocumentActionsDropdown = ({
     onShare,
     onRename,
     onDelete,
+    onToggleStatus,
+    currentStatus = "draft",
 }: DocumentActionsDropdownProps) => (
     <Dropdown.Root>
         <Dropdown.DotsButton />
@@ -82,6 +86,9 @@ export const DocumentActionsDropdown = ({
                     <span className="pr-4">Share</span>
                 </Dropdown.Item>
                 <Dropdown.Separator />
+                <Dropdown.Item icon={CheckCircle} onAction={onToggleStatus}>
+                    <span className="pr-4">{currentStatus === "draft" ? "Mark as Final" : "Mark as Draft"}</span>
+                </Dropdown.Item>
                 <Dropdown.Item icon={Edit01} onAction={onRename}>
                     <span className="pr-4">Rename</span>
                 </Dropdown.Item>

@@ -29,7 +29,30 @@ export async function GET(request: Request) {
     const systemId = searchParams.get("system_id");
     const articleId = searchParams.get("article_id");
 
+    // First, get all AI system IDs for this organization
+    const { data: orgSystems, error: systemsError } = await supabase
+      .from("ai_systems")
+      .select("id")
+      .eq("organization_id", profile.organization_id);
+
+    if (systemsError) {
+      console.error("Error fetching organization systems:", systemsError);
+      return NextResponse.json({ error: systemsError.message }, { status: 500 });
+    }
+
+    const systemIds = (orgSystems || []).map(s => s.id);
+    
+    // If no systems, return empty result
+    if (systemIds.length === 0) {
+      return NextResponse.json({
+        data: [],
+        systems: [],
+        stats: { total: 0, completed: 0, inProgress: 0, pending: 0 },
+      });
+    }
+
     // Build query for requirements with AI system info
+    // Note: documents are linked via ai_system_id, not directly to requirements
     let query = supabase
       .from("ai_system_requirements")
       .select(`
@@ -41,7 +64,7 @@ export async function GET(request: Request) {
         created_at,
         updated_at,
         ai_system_id,
-        ai_systems!inner (
+        ai_systems (
           id,
           name,
           organization_id
@@ -59,15 +82,9 @@ export async function GET(request: Request) {
           id,
           name,
           file_type
-        ),
-        documents (
-          id,
-          name,
-          document_type,
-          status
         )
       `)
-      .eq("ai_systems.organization_id", profile.organization_id);
+      .in("ai_system_id", systemIds);
 
     // Apply filters
     if (status && status !== "all") {
@@ -102,11 +119,8 @@ export async function GET(request: Request) {
         name: req.evidence[0].name,
         type: req.evidence[0].file_type,
       } : undefined,
-      linkedDocument: req.documents?.[0] ? {
-        id: req.documents[0].id,
-        name: req.documents[0].name,
-        type: req.documents[0].status,
-      } : undefined,
+      // Documents are linked via ai_system_id, not directly to requirements
+      linkedDocument: undefined,
     }));
 
     // Filter by articleId if specified (done client-side since it's in the template)

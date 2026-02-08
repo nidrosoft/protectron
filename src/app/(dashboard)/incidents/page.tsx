@@ -23,6 +23,7 @@ const severityConfig = {
 };
 
 const statusConfig = {
+  open: { color: "blue" as const, label: "Open" },
   investigating: { color: "warning" as const, label: "Investigating" },
   resolved: { color: "success" as const, label: "Resolved" },
   reported: { color: "brand" as const, label: "Reported to Authority" },

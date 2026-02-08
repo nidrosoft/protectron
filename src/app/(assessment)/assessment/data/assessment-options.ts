@@ -1,4 +1,4 @@
-import { Building04, Globe01, Server01, Users01, ShieldTick, File06 } from "@untitledui/icons";
+import { Building04, Globe01, Server01, Users01, ShieldTick, File06, Settings01, AlertCircle } from "@untitledui/icons";
 
 // Step definitions with rich descriptions
 export const stepDefinitions = [
@@ -38,6 +38,18 @@ export const stepDefinitions = [
     description: "Evaluate how AI-generated outputs affect individuals and the level of human oversight in your decision-making processes.",
     icon: ShieldTick,
   },
+  {
+    id: 7,
+    title: "Compliance Readiness",
+    description: "Tell us about your existing compliance measures, quality management, and incident response capabilities.",
+    icon: Settings01,
+  },
+  {
+    id: 8,
+    title: "Risk & Deployment",
+    description: "Describe your AI deployment context, including whether you develop or deploy AI, your public service role, and monitoring capabilities.",
+    icon: AlertCircle,
+  },
 ];
 
 export interface AssessmentData {
@@ -53,6 +65,16 @@ export interface AssessmentData {
   dataTypes: string[];
   decisionImpact: string;
   automationLevel: string;
+  // Step 7: Compliance Readiness (new)
+  hasExistingQMS: boolean;
+  hasIncidentResponsePlan: boolean;
+  hasPostMarketMonitoring: boolean;
+  existingCompliance: string[];
+  // Step 8: Risk & Deployment Context (new)
+  aiRole: string; // "provider" | "deployer" | "both"
+  servesPublicSector: boolean;
+  hasVulnerableGroups: boolean;
+  deploymentEnvironment: string;
 }
 
 export const initialAssessmentData: AssessmentData = {
@@ -68,6 +90,16 @@ export const initialAssessmentData: AssessmentData = {
   dataTypes: [],
   decisionImpact: "",
   automationLevel: "",
+  // Step 7
+  hasExistingQMS: false,
+  hasIncidentResponsePlan: false,
+  hasPostMarketMonitoring: false,
+  existingCompliance: [],
+  // Step 8
+  aiRole: "",
+  servesPublicSector: false,
+  hasVulnerableGroups: false,
+  deploymentEnvironment: "",
 };
 
 // AI System types options
@@ -134,6 +166,32 @@ export const automationLevelOptions = [
   { value: "human-on-loop", label: "Human-on-the-Loop", desc: "AI operates with continuous human monitoring and intervention capability", badge: null },
   { value: "advisory-only", label: "Advisory Only", desc: "AI provides information only. All decisions are made entirely by humans", badge: null },
   { value: "no-ai-decisions", label: "No AI Decisions", desc: "AI is not involved in any decision-making processes affecting individuals", badge: null },
+];
+
+// Existing compliance options (Step 7)
+export const existingComplianceOptions = [
+  { id: "iso-9001", label: "ISO 9001 (Quality Management)", desc: "Your organization is certified or working toward ISO 9001 quality management standards" },
+  { id: "iso-27001", label: "ISO 27001 (Information Security)", desc: "Your organization follows ISO 27001 information security management practices" },
+  { id: "iso-42001", label: "ISO/IEC 42001 (AI Management)", desc: "Your organization is certified or working toward the AI management system standard" },
+  { id: "gdpr", label: "GDPR Compliance", desc: "You have documented GDPR compliance measures including DPO, DPIA, and data processing records" },
+  { id: "soc2", label: "SOC 2 Compliance", desc: "Your organization has completed SOC 2 Type I or Type II certification" },
+  { id: "nist-ai-rmf", label: "NIST AI RMF", desc: "You follow the NIST Artificial Intelligence Risk Management Framework" },
+  { id: "none", label: "No existing compliance frameworks", desc: "Your organization has not yet implemented formal compliance frameworks" },
+];
+
+// AI Role options (Step 8)
+export const aiRoleOptions = [
+  { value: "provider", label: "AI Provider", desc: "You develop and make AI systems available on the market or put them into service under your name/trademark" },
+  { value: "deployer", label: "AI Deployer", desc: "You use AI systems developed by third parties in your business operations" },
+  { value: "both", label: "Both Provider & Deployer", desc: "You both develop your own AI systems and use third-party AI solutions" },
+];
+
+// Deployment environment options (Step 8)
+export const deploymentEnvironmentOptions = [
+  { value: "production", label: "Production (Live)", desc: "AI systems are actively used in production with real users and data", badge: "Active" },
+  { value: "pilot", label: "Pilot / Limited Release", desc: "AI systems are being tested with a limited group of users before full deployment", badge: null },
+  { value: "development", label: "Development / Testing", desc: "AI systems are still in development or internal testing phases", badge: null },
+  { value: "planning", label: "Planning Stage", desc: "You are planning to implement AI systems but have not started development yet", badge: null },
 ];
 
 // Industry options

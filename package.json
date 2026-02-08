@@ -9,6 +9,8 @@
         "postinstall": "node -e \"try{require('lightningcss')}catch(e){console.log('lightningcss check:',e.message)}\""
     },
     "dependencies": {
+        "@ai-sdk/anthropic": "^3.0.37",
+        "@ai-sdk/react": "^3.0.74",
         "@internationalized/date": "^3.10.0",
         "@react-aria/utils": "^3.31.0",
         "@react-email/components": "^1.0.2",
@@ -37,6 +39,7 @@
         "@tiptap/starter-kit": "^3.13.0",
         "@untitledui/file-icons": "^0.0.9",
         "@untitledui/icons": "^0.0.19",
+        "ai": "^6.0.72",
         "cobe": "^0.6.5",
         "docx": "^9.5.1",
         "embla-carousel-autoplay": "^8.6.0",
@@ -57,6 +60,7 @@
         "react-dom": "19.1.1",
         "react-hook-form": "^7.62.0",
         "react-hotkeys-hook": "^5.1.0",
+        "react-is": "^19.2.4",
         "recharts": "^3.1.2",
         "resend": "^6.6.0",
         "stripe": "^20.1.0",
@@ -76,6 +80,7 @@
         "@types/qrcode": "^1.5.6",
         "@types/react": "^19.1.9",
         "@types/react-dom": "^19.1.7",
+        "playwright": "^1.58.2",
         "postcss": "^8.5.6",
         "postcss-loader": "^8.1.1",
         "prettier": "^3.6.2",

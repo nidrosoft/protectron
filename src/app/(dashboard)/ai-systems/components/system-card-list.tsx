@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { Warning2 } from "iconsax-react";
+import { ArrowRight } from "@untitledui/icons";
 import { Button } from "@/components/base/buttons/button";
 import { BadgeWithDot } from "@/components/base/badges/badges";
 import { ProgressBarBase } from "@/components/base/progress-indicators/progress-indicators";
+import { cx } from "@/utils/cx";
 import { 
   riskLevelConfig, 
   statusConfig, 
@@ -30,6 +32,26 @@ export const SystemCardList = ({ system }: SystemCardListProps) => {
   const progress = Math.round((system.requirementsComplete / system.requirementsTotal) * 100);
   const isAgent = system.type === "ai_agent";
   const TypeIcon = typeConfig.icon;
+  
+  // Determine styling and CTA based on status
+  const needsAttention = system.status === "not_started";
+  const isInProgress = system.status === "in_progress";
+  
+  // Get CTA config
+  // "Start Compliance" = primary (needs attention, vibrant)
+  // "Continue Setup" = secondary (already in progress, calmer)
+  // "View Details" = secondary (neutral)
+  const getCtaConfig = () => {
+    if (isInProgress) {
+      return { text: "Continue Setup", color: "secondary" as const, highlight: true };
+    }
+    if (needsAttention) {
+      return { text: "Start Compliance", color: "primary" as const, highlight: true };
+    }
+    return { text: "View Details", color: "secondary" as const, highlight: false };
+  };
+  
+  const ctaConfig = getCtaConfig();
 
   return (
     <div className="rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary ring-inset transition-shadow hover:shadow-md">
@@ -113,19 +135,29 @@ export const SystemCardList = ({ system }: SystemCardListProps) => {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 lg:shrink-0">
-          <Button 
-            size="sm" 
-            color="secondary"
-            onClick={() => router.push(`/ai-systems/${system.id}`)}
-          >
-            View Details
-          </Button>
-          {system.status === "in_progress" && (
-            <Button 
-              size="sm"
+          {needsAttention ? (
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-sm transition-all"
+              onClick={() => router.push(`/ai-systems/${system.id}`)}
+            >
+              Start Compliance
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          ) : isInProgress ? (
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 shadow-sm transition-all"
               onClick={() => router.push(`/ai-systems/${system.id}`)}
             >
               Continue Setup
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <Button 
+              size="sm" 
+              color="secondary"
+              onClick={() => router.push(`/ai-systems/${system.id}`)}
+            >
+              View Details
             </Button>
           )}
           {system.status === "compliant" && (

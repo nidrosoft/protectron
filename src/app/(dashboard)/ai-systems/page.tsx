@@ -269,26 +269,68 @@ export default function AISystemsPage() {
         {/* Empty State */}
         {isEmpty && (
           <div className="flex h-full min-h-[400px] items-center justify-center">
-            <EmptyState size="md">
-              <EmptyState.Header pattern="grid">
-                <EmptyState.FeaturedIcon icon={Server01} color="gray" theme="modern" />
-              </EmptyState.Header>
-              <EmptyState.Content>
-                <EmptyState.Title>No AI systems yet</EmptyState.Title>
-                <EmptyState.Description>
-                  Start tracking your AI systems to ensure compliance with the EU AI Act. Add your first system to get started.
-                </EmptyState.Description>
-              </EmptyState.Content>
-              <EmptyState.Footer>
-                <Button 
-                  size="lg" 
-                  iconLeading={({ className }) => <Add size={20} color="currentColor" className={className} />}
-                  onClick={() => router.push("/ai-systems/new")}
+            <div className="max-w-2xl text-center">
+              <EmptyState size="md">
+                <EmptyState.Header pattern="grid">
+                  <EmptyState.FeaturedIcon icon={Server01} color="gray" theme="modern" />
+                </EmptyState.Header>
+                <EmptyState.Content>
+                  <EmptyState.Title>No AI systems yet</EmptyState.Title>
+                  <EmptyState.Description>
+                    Start tracking your AI systems to ensure compliance with the EU AI Act.
+                  </EmptyState.Description>
+                </EmptyState.Content>
+                <EmptyState.Footer>
+                  <div className="flex flex-col items-center gap-3 sm:flex-row">
+                    <Button 
+                      size="lg" 
+                      onClick={() => router.push("/quick-comply")}
+                    >
+                      Quick Comply with AI
+                    </Button>
+                    <Button 
+                      size="lg" 
+                      color="secondary"
+                      iconLeading={({ className }) => <Add size={20} color="currentColor" className={className} />}
+                      onClick={() => router.push("/ai-systems/new")}
+                    >
+                      Add Manually
+                    </Button>
+                  </div>
+                </EmptyState.Footer>
+              </EmptyState>
+
+              {/* Quick Comply Feature Card */}
+              <div className="mx-auto mt-8 grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2">
+                <button
+                  onClick={() => router.push("/quick-comply")}
+                  className="group rounded-xl border border-brand-200 bg-brand-50 p-5 text-left transition-all hover:border-brand-300 hover:shadow-md"
                 >
-                  Add Your First AI System
-                </Button>
-              </EmptyState.Footer>
-            </EmptyState>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100 text-brand-600 transition-colors group-hover:bg-brand-200">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                    </svg>
+                  </div>
+                  <h4 className="mt-3 text-sm font-semibold text-brand-900">Quick Comply</h4>
+                  <p className="mt-1 text-xs text-brand-700">
+                    Chat with AI to add your system and complete compliance in ~45 minutes
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => router.push("/ai-systems/new")}
+                  className="group rounded-xl border border-secondary bg-primary p-5 text-left transition-all hover:border-gray-300 hover:shadow-md"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-600 transition-colors group-hover:bg-gray-200">
+                    <Add size={20} color="currentColor" />
+                  </div>
+                  <h4 className="mt-3 text-sm font-semibold text-primary">Add Manually</h4>
+                  <p className="mt-1 text-xs text-tertiary">
+                    Fill out a form to add your AI system step by step
+                  </p>
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

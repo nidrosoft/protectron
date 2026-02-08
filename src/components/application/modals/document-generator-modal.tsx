@@ -669,13 +669,57 @@ export const DocumentGeneratorModal = ({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (selectedType && selectedSystem) {
-      onGenerate?.({
-        type: selectedType,
-        systemId: selectedSystem,
-        answers,
-      });
+      try {
+        // Convert generated sections to HTML content for the editor
+        const htmlContent = generatedSections.map(section => 
+          `<h2>${section.title}</h2><p>${section.content.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+        ).join('');
+        
+        // Get the system name
+        const selectedSystemData = systems.find(s => s.id === selectedSystem);
+        const systemName = selectedSystemData?.name || "AI System";
+        
+        // Create document in database with content
+        const response = await fetch('/api/v1/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: `${getDocumentTypeName(selectedType)} - ${new Date().toLocaleDateString()}`,
+            document_type: selectedType,
+            ai_system_id: selectedSystem,
+            generation_prompt: answers,
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to create document');
+        }
+        
+        const { data: newDoc } = await response.json();
+        
+        // Now update the document with the generated content
+        const updateResponse = await fetch(`/api/v1/documents/${newDoc.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: htmlContent,
+          }),
+        });
+        
+        if (!updateResponse.ok) {
+          console.error('Failed to save document content');
+        }
+        
+        onGenerate?.({
+          type: selectedType,
+          systemId: selectedSystem,
+          answers,
+        });
+      } catch (error) {
+        console.error('Error saving document:', error);
+      }
     }
     handleClose();
   };

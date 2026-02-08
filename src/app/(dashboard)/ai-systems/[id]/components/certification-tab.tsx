@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   TickCircle,
   CloseCircle,
@@ -16,6 +16,31 @@ import { Badge } from "@/components/base/badges/badges";
 import { Button } from "@/components/base/buttons/button";
 import { useToast } from "@/components/base/toast/toast";
 import { EmptyState } from "@/components/application/empty-state/empty-state";
+import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
+
+interface CertificationAPIData {
+  agent_id: string;
+  compliance_score: number;
+  certification_level: "none" | "bronze" | "silver" | "gold";
+  certification_status: string;
+  requirements: {
+    total: number;
+    completed: number;
+    percentage: number;
+  };
+  checks: {
+    sdk_connected: boolean;
+    hitl_rules_active: boolean;
+    no_open_incidents: boolean;
+    logging_active: boolean;
+  };
+  bonus_points: number;
+  certification: {
+    cert_id: string;
+    valid_until: string;
+    next_verification_at: string;
+  } | null;
+}
 
 interface CertificationData {
   status: "certified" | "pending" | "not_eligible";
@@ -48,8 +73,82 @@ export const CertificationTab = ({ system }: CertificationTabProps) => {
   const { addToast } = useToast();
   const [isEmbedCodeOpen, setIsEmbedCodeOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [certData, setCertData] = useState<CertificationAPIData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const certification = system.certification;
+  // Fetch certification data from API
+  const fetchCertificationData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(`/api/v1/agents/${system.id}/certificate`);
+      if (response.ok) {
+        const result = await response.json();
+        setCertData(result.data);
+      } else {
+        const err = await response.json();
+        setError(err.error || "Failed to load certification data");
+      }
+    } catch (err) {
+      console.error("Error fetching certification:", err);
+      setError("Failed to load certification data");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [system.id]);
+
+  useEffect(() => {
+    fetchCertificationData();
+  }, [fetchCertificationData]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex h-full min-h-[400px] items-center justify-center">
+        <LoadingIndicator label="Loading certification status..." />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex h-full min-h-[400px] items-center justify-center">
+        <EmptyState size="md">
+          <EmptyState.Header pattern="grid">
+            <EmptyState.FeaturedIcon icon={Shield01} color="error" theme="modern" />
+          </EmptyState.Header>
+          <EmptyState.Content>
+            <EmptyState.Title>Error Loading Certification</EmptyState.Title>
+            <EmptyState.Description>{error}</EmptyState.Description>
+          </EmptyState.Content>
+          <EmptyState.Footer>
+            <Button size="lg" onClick={fetchCertificationData}>
+              Retry
+            </Button>
+          </EmptyState.Footer>
+        </EmptyState>
+      </div>
+    );
+  }
+
+  // Transform API data to display format
+  const certification: CertificationData | null = certData ? {
+    status: certData.certification_level !== "none" ? "certified" : 
+            certData.compliance_score >= 50 ? "pending" : "not_eligible",
+    certId: certData.certification?.cert_id,
+    validUntil: certData.certification?.valid_until,
+    nextVerification: certData.certification?.next_verification_at,
+    requirements: {
+      allRequirementsComplete: certData.requirements.percentage === 100,
+      sdkConnectedDays: certData.checks.sdk_connected ? 30 : 0,
+      hitlRulesActive: certData.checks.hitl_rules_active,
+      noHighSeverityIncidents: certData.checks.no_open_incidents,
+      humanOversightRate: certData.checks.hitl_rules_active ? 5 : 0,
+      errorRate: 0,
+    },
+  } : null;
 
   if (!certification) {
     return (
@@ -61,12 +160,12 @@ export const CertificationTab = ({ system }: CertificationTabProps) => {
           <EmptyState.Content>
             <EmptyState.Title>Certification Not Available</EmptyState.Title>
             <EmptyState.Description>
-              Certification is available for Scale and Enterprise plans. Upgrade your plan to access certification badges.
+              Unable to calculate certification status. Please ensure the AI system is properly configured.
             </EmptyState.Description>
           </EmptyState.Content>
           <EmptyState.Footer>
-            <Button size="lg">
-              Upgrade Plan
+            <Button size="lg" onClick={fetchCertificationData}>
+              Refresh
             </Button>
           </EmptyState.Footer>
         </EmptyState>
@@ -169,8 +268,77 @@ export const CertificationTab = ({ system }: CertificationTabProps) => {
     }
   };
 
+  // Get certification level color
+  const getLevelColor = (level: string) => {
+    switch (level) {
+      case "gold": return "text-yellow-600 bg-yellow-50";
+      case "silver": return "text-gray-600 bg-gray-100";
+      case "bronze": return "text-orange-600 bg-orange-50";
+      default: return "text-gray-500 bg-gray-50";
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Compliance Score Overview */}
+      {certData && (
+        <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary ring-inset">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-primary">Compliance Score</h3>
+            <Button 
+              size="sm" 
+              color="secondary" 
+              iconLeading={({ className }) => <Refresh size={16} color="currentColor" className={className} />}
+              onClick={fetchCertificationData}
+            >
+              Refresh
+            </Button>
+          </div>
+          <div className="flex items-center gap-8">
+            <div className="text-center">
+              <div className={`text-5xl font-bold ${certData.compliance_score >= 70 ? "text-success-600" : certData.compliance_score >= 50 ? "text-warning-600" : "text-gray-500"}`}>
+                {certData.compliance_score}%
+              </div>
+              <p className="text-sm text-tertiary mt-1">Compliance Score</p>
+            </div>
+            <div className="flex-1">
+              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all ${certData.compliance_score >= 70 ? "bg-success-500" : certData.compliance_score >= 50 ? "bg-warning-500" : "bg-gray-400"}`}
+                  style={{ width: `${certData.compliance_score}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-2 text-xs text-tertiary">
+                <span>0%</span>
+                <span className="text-warning-600">70% Bronze</span>
+                <span className="text-gray-600">85% Silver</span>
+                <span className="text-yellow-600">95% Gold</span>
+                <span>100%</span>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${getLevelColor(certData.certification_level)}`}>
+                <ShieldTick size={24} color="currentColor" variant="Bold" />
+                <span className="font-semibold capitalize">{certData.certification_level === "none" ? "Not Certified" : `${certData.certification_level} Level`}</span>
+              </div>
+              <p className="text-xs text-tertiary mt-2">
+                {certData.certification_level === "none" 
+                  ? "Reach 70% to qualify for Bronze" 
+                  : "Current certification level"}
+              </p>
+            </div>
+          </div>
+          {certData.bonus_points > 0 && (
+            <p className="text-sm text-success-600 mt-4">
+              +{certData.bonus_points} bonus points from: 
+              {certData.checks.hitl_rules_active && " HITL Rules"} 
+              {certData.checks.no_open_incidents && " No Incidents"} 
+              {certData.checks.logging_active && " Active Logging"}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="rounded-xl bg-primary p-6 shadow-xs ring-1 ring-secondary ring-inset">
         <div className="flex items-center justify-between mb-4">
@@ -182,7 +350,7 @@ export const CertificationTab = ({ system }: CertificationTabProps) => {
             <Badge color="warning" size="md">Pending Certification</Badge>
           )}
           {certification.status === "not_eligible" && (
-            <Badge color="gray" size="md">Not Eligible</Badge>
+            <Badge color="gray" size="md">Not Yet Eligible</Badge>
           )}
         </div>
 
@@ -269,74 +437,64 @@ export const CertificationTab = ({ system }: CertificationTabProps) => {
         <h3 className="text-lg font-semibold text-primary mb-4">Certification Requirements</h3>
         <div className="grid gap-3">
           <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary_subtle">
-            {certification.requirements.allRequirementsComplete ? (
+            {certData && certData.requirements.percentage === 100 ? (
               <TickCircle size={20} className="text-success-500 shrink-0" color="currentColor" variant="Bold" />
             ) : (
               <CloseCircle size={20} className="text-gray-300 shrink-0" color="currentColor" />
             )}
             <div>
               <p className="text-sm font-medium text-primary">All requirements complete or N/A</p>
-              <p className="text-xs text-tertiary">{system.requirements.completed} of {system.requirements.total} requirements completed</p>
+              <p className="text-xs text-tertiary">
+                {certData ? `${certData.requirements.completed} of ${certData.requirements.total} requirements completed (${certData.requirements.percentage}%)` : "Loading..."}
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary_subtle">
-            {certification.requirements.sdkConnectedDays >= 30 ? (
+            {certData?.checks.sdk_connected ? (
               <TickCircle size={20} className="text-success-500 shrink-0" color="currentColor" variant="Bold" />
             ) : (
               <CloseCircle size={20} className="text-gray-300 shrink-0" color="currentColor" />
             )}
             <div>
-              <p className="text-sm font-medium text-primary">SDK connected and logging for 30+ days</p>
-              <p className="text-xs text-tertiary">Currently: {certification.requirements.sdkConnectedDays} days</p>
+              <p className="text-sm font-medium text-primary">SDK connected and logging</p>
+              <p className="text-xs text-tertiary">{certData?.checks.sdk_connected ? "Connected" : "Not connected - connect SDK to enable certification"}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary_subtle">
-            {certification.requirements.hitlRulesActive ? (
+            {certData?.checks.hitl_rules_active ? (
               <TickCircle size={20} className="text-success-500 shrink-0" color="currentColor" variant="Bold" />
             ) : (
               <CloseCircle size={20} className="text-gray-300 shrink-0" color="currentColor" />
             )}
             <div>
-              <p className="text-sm font-medium text-primary">HITL rules configured and active</p>
-              <p className="text-xs text-tertiary">{certification.requirements.hitlRulesActive ? "Active" : "Not configured"}</p>
+              <p className="text-sm font-medium text-primary">HITL rules configured and active (+5 bonus)</p>
+              <p className="text-xs text-tertiary">{certData?.checks.hitl_rules_active ? "Active" : "Not configured"}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary_subtle">
-            {certification.requirements.noHighSeverityIncidents ? (
+            {certData?.checks.no_open_incidents ? (
               <TickCircle size={20} className="text-success-500 shrink-0" color="currentColor" variant="Bold" />
             ) : (
               <CloseCircle size={20} className="text-gray-300 shrink-0" color="currentColor" />
             )}
             <div>
-              <p className="text-sm font-medium text-primary">No open high-severity incidents</p>
-              <p className="text-xs text-tertiary">{certification.requirements.noHighSeverityIncidents ? "No incidents" : "Has open incidents"}</p>
+              <p className="text-sm font-medium text-primary">No open high-severity incidents (+5 bonus)</p>
+              <p className="text-xs text-tertiary">{certData?.checks.no_open_incidents ? "No open incidents" : "Has open incidents - resolve to improve score"}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary_subtle">
-            {certification.requirements.humanOversightRate > 1 ? (
+            {certData?.checks.logging_active ? (
               <TickCircle size={20} className="text-success-500 shrink-0" color="currentColor" variant="Bold" />
             ) : (
               <CloseCircle size={20} className="text-gray-300 shrink-0" color="currentColor" />
             )}
             <div>
-              <p className="text-sm font-medium text-primary">Human oversight rate {">"} 1%</p>
-              <p className="text-xs text-tertiary">Current rate: {certification.requirements.humanOversightRate}%</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary_subtle">
-            {certification.requirements.errorRate < 5 ? (
-              <TickCircle size={20} className="text-success-500 shrink-0" color="currentColor" variant="Bold" />
-            ) : (
-              <CloseCircle size={20} className="text-gray-300 shrink-0" color="currentColor" />
-            )}
-            <div>
-              <p className="text-sm font-medium text-primary">Error rate {"<"} 5%</p>
-              <p className="text-xs text-tertiary">Current rate: {certification.requirements.errorRate}%</p>
+              <p className="text-sm font-medium text-primary">Active logging in last 30 days (+5 bonus)</p>
+              <p className="text-xs text-tertiary">{certData?.checks.logging_active ? "Logging active" : "No recent logs - enable SDK logging"}</p>
             </div>
           </div>
         </div>

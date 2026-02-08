@@ -13,6 +13,8 @@ import {
   UseCasesStep,
   DataTypesStep,
   DecisionImpactStep,
+  ComplianceReadinessStep,
+  RiskDeploymentStep,
 } from "./components";
 import { stepDefinitions, initialAssessmentData, type AssessmentData } from "./data/assessment-options";
 
@@ -130,6 +132,10 @@ export default function AssessmentPage() {
         return <DataTypesStep data={data} toggleArrayItem={toggleArrayItem} />;
       case 6:
         return <DecisionImpactStep data={data} updateData={updateData} />;
+      case 7:
+        return <ComplianceReadinessStep data={data} updateData={updateData} toggleArrayItem={toggleArrayItem} />;
+      case 8:
+        return <RiskDeploymentStep data={data} updateData={updateData} />;
       default:
         return null;
     }

@@ -33,7 +33,19 @@ export type DocumentType =
   | "incident_reporting_procedures"
   | "monitoring_log"
   | "ai_disclosure_notice"
-  | "synthetic_content_policy";
+  | "synthetic_content_policy"
+  // Phase 4 - Missing EU AI Act Documents (PRD Part 5)
+  | "qms"
+  | "post_market_monitoring"
+  | "incident_response_plan"
+  | "fria"
+  | "cybersecurity_assessment"
+  | "transparency_notice"
+  | "eu_db_registration"
+  | "ce_marking"
+  | "conformity_declaration"
+  | "change_management"
+  | "standards_mapping";
 
 export interface DocumentMetadata {
   title: string;
@@ -111,4 +123,24 @@ export type DocumentData =
 export interface GenerateDocumentOptions {
   format: "docx" | "pdf";
   download?: boolean;
+  /** Enterprise formatting quality level. Defaults to "basic" when omitted. */
+  quality?: "basic" | "standard" | "enterprise";
+  /** Organization name for cover page and headers */
+  organizationName?: string;
+  /** Who prepared the document */
+  preparedBy?: string;
+  /** Contact email for document control */
+  contactEmail?: string;
+  /** AI system name for cover page */
+  aiSystemName?: string;
+  /** Risk level for cover page badging */
+  riskLevel?: string;
+  /** Confidentiality classification */
+  confidentiality?: "Public" | "Internal" | "Confidential" | "Strictly Confidential";
+  /** EU AI Act article references */
+  euAiActArticles?: string[];
+  /** Certification number (enterprise only) */
+  certificationNumber?: string;
+  /** Custom primary brand color (enterprise only) */
+  primaryColor?: string;
 }

@@ -15,6 +15,7 @@ import { useToast } from "@/components/base/toast/toast";
 interface FRIAModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  systemId: string;
   systemName: string;
   riskLevel: "high" | "limited" | "minimal";
 }
@@ -91,7 +92,7 @@ const initialFRIASections: FRIASection[] = [
   },
 ];
 
-export const FRIAModal = ({ isOpen, onOpenChange, systemName, riskLevel }: FRIAModalProps) => {
+export const FRIAModal = ({ isOpen, onOpenChange, systemId, systemName, riskLevel }: FRIAModalProps) => {
   const { addToast } = useToast();
   const [sections, setSections] = useState<FRIASection[]>(initialFRIASections);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -118,17 +119,60 @@ export const FRIAModal = ({ isOpen, onOpenChange, systemName, riskLevel }: FRIAM
     );
   };
 
-  const handleGenerateDocument = () => {
+  const handleGenerateDocument = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
+    
+    try {
+      // Build the FRIA answers from completed questions
+      const completedItems = sections.flatMap(s => 
+        s.questions.filter(q => q.completed).map(q => `${s.title}: ${q.question}`)
+      );
+      
+      const friaAnswers = {
+        knownRisks: `The following fundamental rights impact areas have been assessed as applicable: ${completedItems.join('; ')}`,
+        mitigationMeasures: sections.find(s => s.id === 'mitigations')?.questions
+          .filter(q => q.completed)
+          .map(q => q.question)
+          .join('; ') || 'No mitigation measures documented yet.',
+        riskMonitoring: sections.find(s => s.id === 'stakeholders')?.questions
+          .filter(q => q.completed)
+          .map(q => q.question)
+          .join('; ') || 'No stakeholder consultations documented yet.',
+      };
+
+      // Call the document generation API
+      const response = await fetch('/api/v1/documents/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentType: 'risk',
+          systemId: systemId,
+          answers: friaAnswers,
+          documentName: `FRIA - ${systemName}`,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate document');
+      }
+
       addToast({
         title: "FRIA Document Generated",
         message: "Your Fundamental Rights Impact Assessment document has been created and added to Documents.",
         type: "success",
       });
       onOpenChange(false);
-    }, 2000);
+    } catch (error) {
+      console.error('Error generating FRIA document:', error);
+      addToast({
+        title: "Generation Failed",
+        message: error instanceof Error ? error.message : "Failed to generate FRIA document. Please try again.",
+        type: "error",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleClose = () => {
@@ -237,7 +281,7 @@ export const FRIAModal = ({ isOpen, onOpenChange, systemName, riskLevel }: FRIAM
                 <Button
                   size="md"
                   color="primary"
-                  disabled={progress < 100 || isGenerating}
+                  disabled={completedQuestions === 0 || isGenerating}
                   isLoading={isGenerating}
                   iconLeading={({ className }) => (
                     <DocumentText size={18} color="currentColor" className={className} />

@@ -17,6 +17,16 @@ export interface AssessmentData {
   dataTypes: string[];
   decisionImpact: string;
   automationLevel: string;
+  // Compliance Readiness (Step 7)
+  hasExistingQMS: boolean;
+  hasIncidentResponsePlan: boolean;
+  hasPostMarketMonitoring: boolean;
+  existingCompliance: string[];
+  // Risk & Deployment (Step 8)
+  aiRole: string;
+  servesPublicSector: boolean;
+  hasVulnerableGroups: boolean;
+  deploymentEnvironment: string;
 }
 
 export type RiskLevel = "prohibited" | "high" | "limited" | "minimal";
@@ -287,6 +297,67 @@ const EU_AI_ACT_ARTICLES: ApplicableArticle[] = [
     appliesToRiskLevels: ["high", "limited"],
   },
   {
+    id: "art-17",
+    number: "17",
+    title: "Quality Management System",
+    officialText: "Providers of high-risk AI systems shall put a quality management system in place that ensures compliance with this Regulation.",
+    plainExplanation: "You must establish a quality management system (QMS) covering policies, procedures, risk management, post-market monitoring, and resource allocation to ensure ongoing compliance.",
+    requirements: [
+      { id: "art-17-1", title: "QMS Establishment", description: "Establish a quality management system that ensures compliance with the EU AI Act." },
+      { id: "art-17-2", title: "QMS Documentation", description: "Document the QMS strategy, policies, procedures, and resource allocation." },
+      { id: "art-17-3", title: "Change Management", description: "Implement systematic procedures for managing changes to the AI system and QMS." },
+      { id: "art-17-4", title: "Standards Compliance", description: "Map QMS processes to applicable harmonized standards and EU requirements." },
+    ],
+    documentsNeeded: ["Quality Management System", "Change Management Procedures", "Standards Mapping Document"],
+    estimatedHours: 5,
+    appliesToRiskLevels: ["high"],
+  },
+  {
+    id: "art-27",
+    number: "27",
+    title: "Fundamental Rights Impact Assessment",
+    officialText: "Prior to deploying a high-risk AI system, deployers that are bodies governed by public law, or are private operators providing public services...shall perform an assessment of the impact on fundamental rights.",
+    plainExplanation: "Deployers of high-risk AI systems (especially public bodies or those providing public services) must assess the system's impact on fundamental rights before deployment.",
+    requirements: [
+      { id: "art-27-1", title: "FRIA Conduct", description: "Perform a fundamental rights impact assessment before deploying high-risk AI systems." },
+      { id: "art-27-2", title: "Rights Analysis", description: "Analyze impacts on non-discrimination, privacy, freedom of expression, human dignity, and other Charter rights." },
+      { id: "art-27-3", title: "Affected Groups", description: "Identify individuals and groups that may be affected by the AI system." },
+      { id: "art-27-4", title: "Mitigation Plans", description: "Define measures to prevent or minimize negative impacts on fundamental rights." },
+    ],
+    documentsNeeded: ["Fundamental Rights Impact Assessment"],
+    estimatedHours: 4,
+    appliesToRiskLevels: ["high"],
+  },
+  {
+    id: "art-47",
+    number: "47",
+    title: "EU Declaration of Conformity",
+    officialText: "The provider shall draw up a written EU declaration of conformity for each high-risk AI system and keep it at the disposal of national competent authorities.",
+    plainExplanation: "You must create a formal declaration stating that your AI system complies with all applicable EU AI Act requirements, and affix CE marking.",
+    requirements: [
+      { id: "art-47-1", title: "Declaration of Conformity", description: "Draw up a written EU declaration of conformity for each high-risk AI system." },
+      { id: "art-47-2", title: "Conformity Content", description: "Include provider identity, system description, conformity assessment reference, and standards applied." },
+      { id: "art-47-3", title: "CE Marking", description: "Affix CE marking to the AI system or its documentation to indicate conformity." },
+    ],
+    documentsNeeded: ["EU Declaration of Conformity", "CE Marking Declaration"],
+    estimatedHours: 2,
+    appliesToRiskLevels: ["high"],
+  },
+  {
+    id: "art-49",
+    number: "49",
+    title: "EU Database Registration",
+    officialText: "Before placing on the market or putting into service a high-risk AI system...the provider or the deployer...shall register that system in the EU database.",
+    plainExplanation: "High-risk AI systems must be registered in the EU public database before they can be placed on the market or put into service.",
+    requirements: [
+      { id: "art-49-1", title: "Database Registration", description: "Register the high-risk AI system in the EU database before market placement." },
+      { id: "art-49-2", title: "Registration Information", description: "Provide required information including provider identity, system description, status, and conformity details." },
+    ],
+    documentsNeeded: ["EU Database Registration Form"],
+    estimatedHours: 1,
+    appliesToRiskLevels: ["high"],
+  },
+  {
     id: "art-50",
     number: "50",
     title: "Transparency for Limited Risk",
@@ -296,9 +367,54 @@ const EU_AI_ACT_ARTICLES: ApplicableArticle[] = [
       { id: "art-50-1", title: "AI Interaction Disclosure", description: "Inform natural persons that they are interacting with an AI system." },
       { id: "art-50-2", title: "Synthetic Content Marking", description: "Mark AI-generated synthetic audio, image, video or text content." },
     ],
-    documentsNeeded: ["AI Disclosure Notice", "Synthetic Content Policy"],
+    documentsNeeded: ["AI Disclosure Notice", "Synthetic Content Policy", "Transparency Notice"],
     estimatedHours: 1,
     appliesToRiskLevels: ["limited", "minimal"],
+  },
+  {
+    id: "art-61",
+    number: "61",
+    title: "Post-Market Monitoring",
+    officialText: "Providers shall establish and document a post-market monitoring system...proportionate to the nature of the AI technologies and the risks of the high-risk AI system.",
+    plainExplanation: "You must have a documented system for monitoring your AI system after deployment, collecting data on performance, incidents, and user feedback.",
+    requirements: [
+      { id: "art-61-1", title: "Post-Market Monitoring System", description: "Establish and document a post-market monitoring system for the AI system." },
+      { id: "art-61-2", title: "Monitoring Plan", description: "Create a monitoring plan that is proportionate to the system's risk level." },
+      { id: "art-61-3", title: "Data Collection", description: "Actively and systematically collect data on the system's performance throughout its lifetime." },
+    ],
+    documentsNeeded: ["Post-Market Monitoring Plan"],
+    estimatedHours: 3,
+    appliesToRiskLevels: ["high"],
+  },
+  {
+    id: "art-62",
+    number: "62",
+    title: "Serious Incident Reporting",
+    officialText: "Providers of high-risk AI systems placed on the Union market shall report any serious incident to the market surveillance authorities of the Member States.",
+    plainExplanation: "You must have procedures to report serious incidents involving your AI system to the relevant national authorities within prescribed timelines.",
+    requirements: [
+      { id: "art-62-1", title: "Incident Reporting Procedures", description: "Establish procedures for reporting serious incidents to market surveillance authorities." },
+      { id: "art-62-2", title: "Incident Response Plan", description: "Create an incident response plan for handling AI system failures and malfunctions." },
+      { id: "art-62-3", title: "Root Cause Analysis", description: "Conduct root cause analysis for serious incidents and implement corrective actions." },
+    ],
+    documentsNeeded: ["Incident Response Plan", "Incident Reporting Procedures"],
+    estimatedHours: 3,
+    appliesToRiskLevels: ["high"],
+  },
+  {
+    id: "art-71",
+    number: "71",
+    title: "Cybersecurity Requirements",
+    officialText: "High-risk AI systems shall be designed and developed with appropriate cybersecurity measures to ensure resilience against attempts to alter their use, outputs, or performance.",
+    plainExplanation: "Your AI system must have cybersecurity protections against unauthorized access, data poisoning, model manipulation, and adversarial attacks.",
+    requirements: [
+      { id: "art-71-1", title: "Cybersecurity Assessment", description: "Conduct a cybersecurity assessment of the AI system covering all attack vectors." },
+      { id: "art-71-2", title: "Security Controls", description: "Implement security controls proportionate to the risk level of the AI system." },
+      { id: "art-71-3", title: "Adversarial Robustness", description: "Protect against adversarial attacks, data poisoning, and model manipulation." },
+    ],
+    documentsNeeded: ["Cybersecurity Assessment"],
+    estimatedHours: 4,
+    appliesToRiskLevels: ["high"],
   },
 ];
 
@@ -508,7 +624,7 @@ function getCategoryForSystemType(systemType: string): string {
 function getRequirementsCount(riskLevel: RiskLevel): number {
   switch (riskLevel) {
     case "prohibited": return 0;
-    case "high": return 31; // Sum of all high-risk article requirements
+    case "high": return 52; // Articles 9-15 (25) + 17 (4) + 26 (5) + 27 (4) + 47 (3) + 49 (2) + 61 (3) + 62 (3) + 71 (3) = 52
     case "limited": return 8; // Articles 9, 11, 13, 26, 50
     case "minimal": return 2; // Article 50 only
     default: return 0;
@@ -525,17 +641,27 @@ function getDocumentsNeeded(riskLevel: RiskLevel): string[] {
         "Human Oversight Procedures",
         "Instructions for Use",
         "Accuracy Test Results",
-        "Security Assessment",
+        "Security Assessment Report",
+        "Quality Management System",
+        "Post-Market Monitoring Plan",
+        "Incident Response Plan",
+        "Fundamental Rights Impact Assessment",
+        "Cybersecurity Assessment",
+        "EU Declaration of Conformity",
+        "CE Marking Declaration",
+        "EU Database Registration Form",
+        "Change Management Procedures",
       ];
     case "limited":
       return [
         "Technical Documentation",
         "Instructions for Use",
         "AI Disclosure Notice",
+        "Transparency Notice",
         "Risk Management Summary",
       ];
     case "minimal":
-      return ["AI Disclosure Notice"];
+      return ["AI Disclosure Notice", "Transparency Notice"];
     default:
       return [];
   }
@@ -651,6 +777,65 @@ function calculateRiskResults(
     });
   }
   
+  // Compliance readiness adjustments (new fields from Steps 7-8)
+  if (data.hasExistingQMS) {
+    scoreBreakdown.push({
+      category: "Quality Management",
+      points: 5,
+      reason: "Existing QMS provides a foundation for Article 17 compliance",
+      isPositive: true,
+    });
+  }
+  
+  if (data.hasIncidentResponsePlan) {
+    scoreBreakdown.push({
+      category: "Incident Response",
+      points: 3,
+      reason: "Existing incident response plan supports Article 62 compliance",
+      isPositive: true,
+    });
+  }
+  
+  if (data.hasPostMarketMonitoring) {
+    scoreBreakdown.push({
+      category: "Post-Market Monitoring",
+      points: 3,
+      reason: "Existing monitoring supports Article 61 compliance",
+      isPositive: true,
+    });
+  }
+  
+  if (data.existingCompliance && data.existingCompliance.length > 0) {
+    const relevantFrameworks = data.existingCompliance.filter(f => f !== "none");
+    if (relevantFrameworks.length > 0) {
+      scoreBreakdown.push({
+        category: "Existing Frameworks",
+        points: Math.min(relevantFrameworks.length * 2, 10),
+        reason: `${relevantFrameworks.length} existing compliance framework(s) reduce gaps`,
+        isPositive: true,
+      });
+    }
+  }
+  
+  // Public sector / vulnerable groups increase requirements
+  if (data.servesPublicSector && highCount > 0) {
+    scoreBreakdown.push({
+      category: "Public Sector",
+      points: -5,
+      reason: "Public sector AI use requires mandatory FRIA under Article 27",
+      isPositive: false,
+    });
+  }
+  
+  if (data.hasVulnerableGroups && highCount > 0) {
+    scoreBreakdown.push({
+      category: "Vulnerable Groups",
+      points: -5,
+      reason: "AI affecting vulnerable groups faces stricter compliance requirements",
+      isPositive: false,
+    });
+  }
+  
   return results;
 }
 
@@ -669,7 +854,7 @@ function determineApplicableArticles(systems: DetectedAISystem[]): ApplicableArt
   
   for (const system of systems) {
     if (system.riskLevel === "high") {
-      // High-risk systems: Articles 9-15, 26
+      // High-risk systems: Articles 9-15, 17, 26, 27, 47, 49, 61, 62, 71
       applicableArticleIds.add("art-9");
       applicableArticleIds.add("art-10");
       applicableArticleIds.add("art-11");
@@ -677,7 +862,14 @@ function determineApplicableArticles(systems: DetectedAISystem[]): ApplicableArt
       applicableArticleIds.add("art-13");
       applicableArticleIds.add("art-14");
       applicableArticleIds.add("art-15");
+      applicableArticleIds.add("art-17"); // Quality Management System
       applicableArticleIds.add("art-26");
+      applicableArticleIds.add("art-27"); // Fundamental Rights Impact Assessment
+      applicableArticleIds.add("art-47"); // EU Declaration of Conformity
+      applicableArticleIds.add("art-49"); // EU Database Registration
+      applicableArticleIds.add("art-61"); // Post-Market Monitoring
+      applicableArticleIds.add("art-62"); // Serious Incident Reporting
+      applicableArticleIds.add("art-71"); // Cybersecurity
     } else if (system.riskLevel === "limited") {
       // Limited-risk systems: Articles 9, 11, 13, 26, 50
       applicableArticleIds.add("art-9");
@@ -759,6 +951,45 @@ function generateComplianceGaps(systems: DetectedAISystem[], articles: Applicabl
     });
   }
   
+  // Important gaps for new articles
+  if (highRiskCount > 0) {
+    gaps.push({
+      id: "gap-4b",
+      title: "Quality Management System not established",
+      description: "Article 17 requires a documented QMS covering policies, procedures, risk management, and post-market monitoring.",
+      articleRef: "Article 17",
+      priority: "important",
+      systemsAffected: highRiskCount,
+    });
+    
+    gaps.push({
+      id: "gap-4c",
+      title: "No post-market monitoring system",
+      description: "Article 61 requires a documented post-market monitoring system to actively collect performance data after deployment.",
+      articleRef: "Article 61",
+      priority: "important",
+      systemsAffected: highRiskCount,
+    });
+    
+    gaps.push({
+      id: "gap-4d",
+      title: "Incident response plan not defined",
+      description: "Article 62 requires procedures for reporting serious incidents and an incident response plan.",
+      articleRef: "Article 62",
+      priority: "important",
+      systemsAffected: highRiskCount,
+    });
+    
+    gaps.push({
+      id: "gap-4e",
+      title: "Fundamental rights impact not assessed",
+      description: "Article 27 requires a fundamental rights impact assessment before deploying high-risk AI systems.",
+      articleRef: "Article 27",
+      priority: "important",
+      systemsAffected: highRiskCount,
+    });
+  }
+  
   // Recommended gaps
   gaps.push({
     id: "gap-7",
@@ -771,12 +1002,41 @@ function generateComplianceGaps(systems: DetectedAISystem[], articles: Applicabl
   
   gaps.push({
     id: "gap-8",
-    title: "Cybersecurity assessment",
-    description: "Conduct and document security assessment for AI systems.",
-    articleRef: "Article 15",
-    priority: "recommended",
+    title: "Cybersecurity assessment not conducted",
+    description: "Article 71 requires a cybersecurity assessment covering adversarial attacks, data poisoning, and model manipulation.",
+    articleRef: "Article 71",
+    priority: highRiskCount > 0 ? "important" : "recommended",
     systemsAffected: highRiskCount,
   });
+  
+  if (highRiskCount > 0) {
+    gaps.push({
+      id: "gap-8b",
+      title: "EU Declaration of Conformity not prepared",
+      description: "Article 47 requires a written EU declaration of conformity and CE marking before market placement.",
+      articleRef: "Article 47",
+      priority: "recommended",
+      systemsAffected: highRiskCount,
+    });
+    
+    gaps.push({
+      id: "gap-8c",
+      title: "EU Database registration not completed",
+      description: "Article 49 requires registration of high-risk AI systems in the EU database before market placement.",
+      articleRef: "Article 49",
+      priority: "recommended",
+      systemsAffected: highRiskCount,
+    });
+    
+    gaps.push({
+      id: "gap-8d",
+      title: "Change management procedures not defined",
+      description: "Part of QMS requirements under Article 17 — systematic procedures for managing changes to the AI system.",
+      articleRef: "Article 17",
+      priority: "recommended",
+      systemsAffected: highRiskCount,
+    });
+  }
   
   if (limitedRiskCount > 0 || highRiskCount > 0) {
     gaps.push({
@@ -880,7 +1140,7 @@ function generateRoadmap(systems: DetectedAISystem[], articles: ApplicableArticl
     {
       id: "phase-3",
       phase: 3,
-      title: "Implementation",
+      title: "Implementation & Compliance Systems",
       timeframe: "Week 7-10",
       steps: [
         {
@@ -895,13 +1155,45 @@ function generateRoadmap(systems: DetectedAISystem[], articles: ApplicableArticl
           id: "step-10",
           stepNumber: 10,
           title: "Conduct accuracy and security testing",
-          description: "Gather evidence for Article 15: Run accuracy tests, conduct security assessment, and document results.",
+          description: "Gather evidence for Article 15 and Article 71: Run accuracy tests, conduct cybersecurity assessment, and document results.",
           protectronFeature: "Evidence links directly to requirements",
           estimatedMinutes: 180,
         },
         {
           id: "step-11",
           stepNumber: 11,
+          title: "Establish Quality Management System",
+          description: "Create QMS documentation for Article 17: Define policies, procedures, resource allocation, and change management processes.",
+          protectronFeature: "Protectron generates QMS templates",
+          estimatedMinutes: 120,
+        },
+        {
+          id: "step-12",
+          stepNumber: 12,
+          title: "Set up post-market monitoring",
+          description: "Establish monitoring system for Article 61: Define data collection, performance metrics, feedback channels, and reporting cadence.",
+          protectronFeature: "Post-market monitoring plan generator",
+          estimatedMinutes: 90,
+        },
+        {
+          id: "step-13",
+          stepNumber: 13,
+          title: "Define incident response procedures",
+          description: "Create incident response plan for Article 62: Define severity levels, reporting timelines, escalation paths, and root cause analysis procedures.",
+          protectronFeature: "Incident response plan template",
+          estimatedMinutes: 60,
+        },
+        {
+          id: "step-14",
+          stepNumber: 14,
+          title: "Complete fundamental rights impact assessment",
+          description: "Conduct FRIA for Article 27: Assess impacts on non-discrimination, privacy, dignity, and other Charter rights for affected groups.",
+          protectronFeature: "FRIA template with guided questions",
+          estimatedMinutes: 90,
+        },
+        {
+          id: "step-15",
+          stepNumber: 15,
           title: "Upload supporting evidence",
           description: "Gather and organize all compliance evidence: Link documents to requirements, upload test results, add external certifications.",
           protectronFeature: "Evidence Management tracks everything",
@@ -912,32 +1204,48 @@ function generateRoadmap(systems: DetectedAISystem[], articles: ApplicableArticl
     {
       id: "phase-4",
       phase: 4,
-      title: "Verification",
-      timeframe: "Week 11-12",
+      title: "Verification & Certification",
+      timeframe: "Week 11-14",
       steps: [
         {
-          id: "step-12",
-          stepNumber: 12,
+          id: "step-16",
+          stepNumber: 16,
           title: "Complete gap analysis",
           description: "Review compliance status: Check all requirements marked complete, verify all documents generated, ensure all evidence uploaded.",
           protectronFeature: "Dashboard shows overall readiness",
           estimatedMinutes: 60,
         },
         {
-          id: "step-13",
-          stepNumber: 13,
+          id: "step-17",
+          stepNumber: 17,
+          title: "Conduct cybersecurity assessment",
+          description: "Complete cybersecurity assessment for Article 71: Evaluate attack vectors, data poisoning risks, adversarial robustness, and access controls.",
+          protectronFeature: "Cybersecurity assessment template",
+          estimatedMinutes: 120,
+        },
+        {
+          id: "step-18",
+          stepNumber: 18,
           title: "Generate compliance report",
           description: "Create audit-ready documentation: Full Compliance Report, Executive Summary, and Evidence Index.",
           protectronFeature: "One-click export for stakeholders",
           estimatedMinutes: 30,
         },
         {
-          id: "step-14",
-          stepNumber: 14,
-          title: "Prepare EU Declaration of Conformity",
-          description: "Final compliance declaration: Review conformity checklist, sign declaration, register in EU database (if required).",
-          protectronFeature: "Ready for August 2026 deadline",
+          id: "step-19",
+          stepNumber: 19,
+          title: "Prepare EU Declaration of Conformity & CE Marking",
+          description: "Final compliance declaration for Article 47: Review conformity checklist, sign declaration, affix CE marking.",
+          protectronFeature: "Declaration and CE marking templates",
           estimatedMinutes: 45,
+        },
+        {
+          id: "step-20",
+          stepNumber: 20,
+          title: "Register in EU Database",
+          description: "Complete registration for Article 49: Submit system details, conformity information, and provider identity to the EU AI database.",
+          protectronFeature: "EU database registration form generator",
+          estimatedMinutes: 30,
         },
       ],
     },

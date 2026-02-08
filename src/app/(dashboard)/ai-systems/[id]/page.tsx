@@ -28,6 +28,7 @@ import { FRIAModal } from "./components/fria-modal";
 import { DataGovernanceModal } from "./components/data-governance-modal";
 import { useAISystem } from "@/hooks";
 import { useToast } from "@/components/base/toast/toast";
+import { ComplianceChecklist, type ChecklistItem } from "@/components/application/compliance-checklist";
 import { 
   mockAISystems, 
   riskLevelConfig, 
@@ -76,6 +77,8 @@ export default function AISystemDetailPage() {
   const [isPaused, setIsPaused] = useState(false);
   const [isFRIAModalOpen, setIsFRIAModalOpen] = useState(false);
   const [isDataGovernanceModalOpen, setIsDataGovernanceModalOpen] = useState(false);
+  const [isChecklistMinimized, setIsChecklistMinimized] = useState(false);
+  const [showChecklist, setShowChecklist] = useState(true);
 
   // Transform API data to match component expectations
   const system = useMemo(() => {
@@ -183,6 +186,83 @@ export default function AISystemDetailPage() {
       statistics: apiSystem.agent_statistics || [],
     };
   }, [apiSystem]);
+
+  // Generate checklist items from requirements
+  const checklistItems: ChecklistItem[] = useMemo(() => {
+    if (!system) return [];
+    
+    const items: ChecklistItem[] = [];
+    
+    // Add document generation task
+    const pendingDocs = system.requirements.sections.flatMap(s => 
+      s.items.filter(i => i.status !== "complete")
+    );
+    
+    if (pendingDocs.length > 0) {
+      items.push({
+        id: "complete-requirements",
+        title: "Complete Compliance Requirements",
+        description: `${system.requirements.completed}/${system.requirements.total} requirements done`,
+        status: system.requirements.completed > 0 ? "in_progress" : "pending",
+        action: {
+          label: "View",
+          onClick: () => setActiveTab("requirements"),
+        },
+        subItems: pendingDocs.slice(0, 5).map(doc => ({
+          id: doc.id,
+          title: doc.title,
+          status: doc.status === "complete" ? "complete" : "pending",
+        })),
+      });
+    } else {
+      items.push({
+        id: "complete-requirements",
+        title: "Complete Compliance Requirements",
+        description: "All requirements satisfied",
+        status: "complete",
+      });
+    }
+
+    // Add documentation task
+    items.push({
+      id: "generate-docs",
+      title: "Generate Required Documents",
+      description: system.documents.length > 0 ? `${system.documents.length} document(s) created` : "Create compliance documentation",
+      status: system.documents.length > 0 ? "in_progress" : "pending",
+      action: {
+        label: "Create",
+        onClick: () => setActiveTab("documents"),
+      },
+    });
+
+    // Add evidence upload task
+    items.push({
+      id: "upload-evidence",
+      title: "Upload Supporting Evidence",
+      description: system.evidence.length > 0 ? `${system.evidence.length} file(s) uploaded` : "Attach evidence to requirements",
+      status: system.evidence.length > 0 ? "in_progress" : "pending",
+      action: {
+        label: "Upload",
+        onClick: () => setActiveTab("evidence"),
+      },
+    });
+
+    // Add certification task (only if progress is significant)
+    if (system.progress >= 50) {
+      items.push({
+        id: "certification",
+        title: "Review Certification Status",
+        description: system.progress >= 70 ? "Eligible for certification" : "Need 70% to qualify",
+        status: system.progress >= 70 ? "in_progress" : "pending",
+        action: {
+          label: "Check",
+          onClick: () => setActiveTab("certification"),
+        },
+      });
+    }
+
+    return items;
+  }, [system]);
 
   // Show loading state with improved skeleton
   if (isLoading) {
@@ -389,11 +469,25 @@ export default function AISystemDetailPage() {
                   </>
                 ) : (
                   <>
-                    <span>{system.category}</span>
-                    <span>•</span>
-                    <span>Provider: {system.provider}</span>
-                    <span>•</span>
-                    <span>Model: {system.modelName}</span>
+                    {system.category && <span>{system.category}</span>}
+                    {system.provider && system.provider !== "Unknown" && (
+                      <>
+                        {system.category && <span>•</span>}
+                        <span>Provider: {system.provider}</span>
+                      </>
+                    )}
+                    {system.modelName && (
+                      <>
+                        <span>•</span>
+                        <span>Model: {system.modelName}</span>
+                      </>
+                    )}
+                    {!system.provider && !system.modelName && (
+                      <>
+                        {system.category && <span>•</span>}
+                        <span className="text-warning-600 italic">Provider/Model not configured</span>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -639,6 +733,7 @@ export default function AISystemDetailPage() {
       <FRIAModal
         isOpen={isFRIAModalOpen}
         onOpenChange={setIsFRIAModalOpen}
+        systemId={id}
         systemName={system.name}
         riskLevel={system.riskLevel}
       />
@@ -649,6 +744,8 @@ export default function AISystemDetailPage() {
         onOpenChange={setIsDataGovernanceModalOpen}
         systemName={system.name}
       />
+
+      {/* Floating Compliance Checklist - TODO: Debug and re-enable */}
     </div>
   );
 }

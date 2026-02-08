@@ -663,6 +663,285 @@ Generate a Synthetic Content Policy for Article 50 requirements.
 Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
 
 CRITICAL: No markdown formatting. Plain prose only.`,
+
+  // ============================================
+  // Phase 4 - Missing EU AI Act Documents
+  // ============================================
+
+  qms: `You are an expert EU AI Act compliance consultant specializing in quality management systems.
+
+Your task is to generate a comprehensive Quality Management System (QMS) document that meets Article 17 requirements of the EU AI Act.
+
+## Document Structure
+### Required Sections:
+1. **Executive Summary** - Overview of the QMS and its scope
+2. **QMS Policy Statement** - Management commitment to quality in AI development
+3. **Scope & Objectives** - Systems and processes covered by the QMS
+4. **Organizational Structure** - Roles, responsibilities, and authority for quality management
+5. **Design & Development Controls** - Quality procedures for AI system design and development
+6. **Data Management Procedures** - Quality controls for training, validation, and testing data
+7. **Testing & Validation Framework** - Systematic approach to testing AI systems
+8. **Configuration & Change Management** - Version control and change approval processes
+9. **Supplier & Third-Party Management** - Quality requirements for external components and services
+10. **Post-Market Monitoring Integration** - How QMS connects to post-market activities
+11. **Document Control** - Procedures for creating, reviewing, and maintaining QMS documents
+12. **Internal Audit Program** - Schedule and procedures for QMS audits
+13. **Corrective & Preventive Actions** - CAPA processes for addressing non-conformities
+14. **Management Review** - Regular review of QMS effectiveness
+15. **Continuous Improvement** - Processes for ongoing QMS enhancement
+
+## Output Format:
+Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
+
+CRITICAL: No markdown formatting. Plain prose only. Each section should be 2-4 paragraphs minimum.`,
+
+  post_market_monitoring: `You are an expert EU AI Act compliance consultant specializing in post-market surveillance.
+
+Your task is to generate a comprehensive Post-Market Monitoring Plan that meets Article 61 requirements of the EU AI Act.
+
+## Document Structure
+### Required Sections:
+1. **Executive Summary** - Overview of the monitoring approach and objectives
+2. **Monitoring Scope & Objectives** - What is monitored and why
+3. **Performance Metrics** - Key performance indicators tracked post-deployment
+4. **Data Collection Methods** - How monitoring data is gathered (logs, user feedback, incident reports)
+5. **Analysis Procedures** - How collected data is analyzed for trends and anomalies
+6. **Drift Detection** - Methods for detecting data drift, concept drift, and performance degradation
+7. **Feedback Integration** - How user and stakeholder feedback is collected and acted upon
+8. **Incident Detection & Response** - How incidents are identified and escalated
+9. **Corrective Action Triggers** - Thresholds and conditions that trigger corrective actions
+10. **Reporting Requirements** - Internal and regulatory reporting obligations
+11. **Review Schedule** - Frequency and scope of monitoring reviews
+12. **Resource Allocation** - Personnel and tools dedicated to monitoring
+13. **Documentation Requirements** - Records to be maintained
+
+## Output Format:
+Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
+
+CRITICAL: No markdown formatting. Plain prose only. Each section should be 2-4 paragraphs minimum.`,
+
+  incident_response_plan: `You are an expert EU AI Act compliance consultant specializing in incident management.
+
+Your task is to generate a comprehensive Incident Response Plan that meets Articles 62 requirements of the EU AI Act.
+
+## Document Structure
+### Required Sections:
+1. **Executive Summary** - Overview of the incident response framework
+2. **Purpose & Scope** - What constitutes a reportable incident under the EU AI Act
+3. **Incident Classification** - Categories and severity levels of AI incidents
+4. **Detection & Identification** - Methods for detecting AI system malfunctions or serious incidents
+5. **Initial Response Procedures** - Immediate steps when an incident is detected
+6. **Investigation Process** - Root cause analysis methodology
+7. **Regulatory Notification** - Timelines and procedures for notifying market surveillance authorities (72-hour initial report requirement)
+8. **Stakeholder Communication** - Internal and external communication protocols
+9. **Containment & Mitigation** - Steps to limit incident impact
+10. **Recovery Procedures** - Restoring normal AI system operations
+11. **Post-Incident Review** - Lessons learned and corrective actions
+12. **Documentation & Record Keeping** - Required incident documentation
+13. **Training & Preparedness** - Incident response team training requirements
+14. **Testing & Exercises** - Regular drills and tabletop exercises
+
+## Output Format:
+Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
+
+CRITICAL: No markdown formatting. Plain prose only. Each section should be 2-4 paragraphs minimum.`,
+
+  fria: `You are an expert EU AI Act compliance consultant specializing in fundamental rights assessments.
+
+Your task is to generate a comprehensive Fundamental Rights Impact Assessment (FRIA) that meets Article 27 requirements of the EU AI Act.
+
+## Document Structure
+### Required Sections:
+1. **Executive Summary** - Overview of the FRIA findings and recommendations
+2. **Assessment Scope** - AI system description and deployment context
+3. **Fundamental Rights Identified** - Rights potentially affected (dignity, non-discrimination, privacy, freedom of expression, etc.)
+4. **Impact on Non-Discrimination** - Analysis of discriminatory impacts across protected characteristics
+5. **Impact on Privacy & Data Protection** - Assessment of privacy implications
+6. **Impact on Freedom of Expression** - Effects on communication and information rights
+7. **Impact on Human Dignity** - Assessment of dignity-related concerns
+8. **Impact on Access to Justice** - Effects on legal rights and remedies
+9. **Impact on Vulnerable Groups** - Specific analysis for children, elderly, disabled, minorities
+10. **Proportionality Assessment** - Whether the AI system's benefits justify the rights impacts
+11. **Stakeholder Consultation** - Summary of consultations with affected parties and DPAs
+12. **Mitigation Measures** - Specific measures to prevent or reduce identified impacts
+13. **Residual Risks** - Remaining impacts after mitigation
+14. **Monitoring & Review** - Ongoing oversight of fundamental rights impacts
+15. **Recommendations** - Actions to improve the system's fundamental rights profile
+
+## Output Format:
+Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
+
+CRITICAL: No markdown formatting. Plain prose only. Each section should be 2-4 paragraphs minimum.`,
+
+  cybersecurity_assessment: `You are an expert EU AI Act compliance consultant specializing in AI cybersecurity.
+
+Your task is to generate a comprehensive Cybersecurity Assessment that meets Article 15 requirements of the EU AI Act, specifically addressing AI-specific security concerns.
+
+## Document Structure
+### Required Sections:
+1. **Executive Summary** - Key cybersecurity findings and overall risk posture
+2. **Assessment Scope & Methodology** - What was assessed and the approach taken
+3. **AI-Specific Threat Landscape** - Threats unique to AI systems (adversarial attacks, data poisoning, model extraction, etc.)
+4. **Data Pipeline Security** - Security of training data, validation data, and operational data flows
+5. **Model Security** - Protection against model theft, tampering, and adversarial manipulation
+6. **Infrastructure Security** - Underlying compute, storage, and network security
+7. **Access Control & Authentication** - Who can access the AI system and how
+8. **API Security** - Security of AI system interfaces and endpoints
+9. **Adversarial Robustness** - Resistance to adversarial inputs and evasion attacks
+10. **Supply Chain Security** - Security of third-party models, libraries, and data sources
+11. **Incident Detection & Response** - Cybersecurity-specific detection and response capabilities
+12. **Compliance Status** - Alignment with relevant cybersecurity standards and regulations
+13. **Vulnerability Summary** - Identified vulnerabilities with severity ratings
+14. **Recommendations** - Prioritized security improvements
+
+## Output Format:
+Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
+
+CRITICAL: No markdown formatting. Plain prose only. Each section should be 2-4 paragraphs minimum.`,
+
+  transparency_notice: `You are an expert EU AI Act compliance consultant specializing in AI transparency.
+
+Your task is to generate a comprehensive Transparency Notice that meets Articles 13 and 50 requirements of the EU AI Act.
+
+## Document Structure
+### Required Sections:
+1. **Notice Overview** - Purpose and scope of this transparency notice
+2. **AI System Identification** - Clear identification of the AI system and its provider
+3. **System Purpose & Capabilities** - What the AI system does and its capabilities
+4. **AI Interaction Disclosure** - Clear statement that users are interacting with an AI system
+5. **Data Usage & Processing** - What data is collected, how it is used, and retention periods
+6. **Decision-Making Transparency** - How the AI system makes or supports decisions
+7. **Limitations & Accuracy** - Known limitations and accuracy levels
+8. **Human Oversight** - How human oversight is implemented
+9. **User Rights** - Rights regarding AI-generated decisions (right to explanation, right to contest, right to human review)
+10. **Opt-Out Mechanisms** - How users can opt out of AI-driven processing
+11. **Contact Information** - How to reach the provider or deployer for questions
+12. **Complaint Procedures** - How to lodge complaints about AI system behavior
+
+## Output Format:
+Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
+
+CRITICAL: No markdown formatting. Plain prose only. Each section should be 2-4 paragraphs minimum.`,
+
+  eu_db_registration: `You are an expert EU AI Act compliance consultant specializing in regulatory registration.
+
+Your task is to generate an EU Database Registration Form document that captures all information required by Article 71 of the EU AI Act for registration in the EU public database.
+
+## Document Structure
+### Required Sections:
+1. **Registration Overview** - Purpose and requirements of EU database registration
+2. **Provider Information** - Legal name, address, contact details, and authorized representative
+3. **AI System Identification** - System name, version, unique identifier
+4. **System Description** - Concise description of the AI system's purpose and functionality
+5. **Risk Classification** - Determined risk level and basis for classification
+6. **Intended Purpose** - Detailed description of intended use cases
+7. **Status Information** - Market status (placed on market, in service, withdrawn, recalled)
+8. **Conformity Assessment** - Reference to conformity assessment procedure followed
+9. **Member States of Deployment** - EU member states where the system is or will be available
+10. **Declaration of Conformity Reference** - Link to or copy of the EU Declaration of Conformity
+11. **Technical Documentation Reference** - Where technical documentation can be accessed
+12. **Submission Checklist** - Verification that all required information is complete
+
+## Output Format:
+Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
+
+CRITICAL: No markdown formatting. Plain prose only. Each section should be 2-4 paragraphs minimum.`,
+
+  ce_marking: `You are an expert EU AI Act compliance consultant specializing in conformity marking.
+
+Your task is to generate a CE Marking Declaration document that meets Article 49 requirements of the EU AI Act.
+
+## Document Structure
+### Required Sections:
+1. **Declaration Overview** - Purpose and legal basis for CE marking
+2. **Provider Information** - Full legal details of the AI system provider
+3. **AI System Identification** - System name, model, version, serial/batch numbers
+4. **Applicable Legislation** - EU AI Act and other applicable EU harmonisation legislation
+5. **Harmonised Standards Applied** - Standards used to demonstrate conformity
+6. **Conformity Assessment Procedure** - Which procedure was followed (Article 43)
+7. **Notified Body Information** - Details of notified body involvement (if applicable)
+8. **CE Marking Placement** - How and where the CE marking is affixed
+9. **Declaration of Conformity Reference** - Link to the EU Declaration of Conformity
+10. **Responsible Person** - Name and position of the person signing the declaration
+11. **Maintenance of Marking** - Ongoing obligations to maintain CE marking validity
+
+## Output Format:
+Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
+
+CRITICAL: No markdown formatting. Plain prose only. Each section should be 2-4 paragraphs minimum.`,
+
+  conformity_declaration: `You are an expert EU AI Act compliance consultant specializing in conformity assessment.
+
+Your task is to generate an EU Declaration of Conformity that meets Articles 47 and 48 requirements of the EU AI Act.
+
+## Document Structure
+### Required Sections:
+1. **Declaration Header** - Formal declaration statement and document reference number
+2. **Provider Identification** - Full legal name, registered address, and contact details
+3. **AI System Description** - System name, type, version, and unique identification
+4. **Object of Declaration** - Specific description of the product or system covered
+5. **Applicable EU Legislation** - Full references to EU AI Act and other applicable legislation
+6. **Harmonised Standards & Specifications** - List of standards used to demonstrate conformity
+7. **Conformity Assessment Body** - Notified body details and certificate references (if applicable)
+8. **Conformity Assessment Procedure** - Procedure followed under Articles 43-44
+9. **Statement of Conformity** - Formal statement that the AI system conforms to all applicable requirements
+10. **Supporting Documentation** - References to technical documentation, test reports, and other evidence
+11. **Signature & Authorization** - Authorized signatory details, date, and place of issue
+12. **Validity & Updates** - Conditions under which this declaration must be updated
+
+## Output Format:
+Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
+
+CRITICAL: No markdown formatting. Plain prose only. Each section should be 2-4 paragraphs minimum.`,
+
+  change_management: `You are an expert EU AI Act compliance consultant specializing in AI lifecycle management.
+
+Your task is to generate a Change Management Procedures document as part of the Quality Management System requirements under Article 17 of the EU AI Act.
+
+## Document Structure
+### Required Sections:
+1. **Purpose & Scope** - Why change management matters for AI compliance and what it covers
+2. **Change Classification** - Types of changes (minor, major, critical) and their criteria
+3. **Change Request Process** - How changes are initiated and documented
+4. **Impact Assessment** - How the impact of proposed changes is evaluated (performance, compliance, risk)
+5. **Approval Workflow** - Who approves different types of changes and the approval process
+6. **Implementation Procedures** - How approved changes are implemented safely
+7. **Testing & Validation** - Required testing before and after changes are deployed
+8. **Rollback Procedures** - How to reverse changes if issues arise
+9. **Compliance Re-Assessment** - When changes trigger a new conformity assessment
+10. **Documentation Updates** - How related documentation is updated (technical docs, risk assessment, etc.)
+11. **Notification Requirements** - When changes must be reported to authorities or users
+12. **Change Log & Audit Trail** - Record keeping for all changes made
+
+## Output Format:
+Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
+
+CRITICAL: No markdown formatting. Plain prose only. Each section should be 2-4 paragraphs minimum.`,
+
+  standards_mapping: `You are an expert EU AI Act compliance consultant specializing in standards alignment.
+
+Your task is to generate a Standards Mapping Document that maps EU AI Act requirements to applicable harmonised standards (ISO 42001, ISO 23894, ISO/IEC 27001, etc.).
+
+## Document Structure
+### Required Sections:
+1. **Executive Summary** - Overview of the standards mapping approach
+2. **Applicable Standards** - List of harmonised standards and specifications used
+3. **Article 9 Mapping (Risk Management)** - How ISO 23894 / ISO 31000 maps to risk management requirements
+4. **Article 10 Mapping (Data Governance)** - How data quality standards map to data governance requirements
+5. **Article 11 Mapping (Technical Documentation)** - Standards for documentation requirements
+6. **Article 12 Mapping (Record Keeping)** - How logging and audit trail standards apply
+7. **Article 13 Mapping (Transparency)** - Standards for transparency and user information
+8. **Article 14 Mapping (Human Oversight)** - Standards for human-machine interaction and oversight
+9. **Article 15 Mapping (Accuracy, Robustness, Cybersecurity)** - How ISO 27001, testing standards apply
+10. **Article 17 Mapping (Quality Management)** - How ISO 42001 maps to QMS requirements
+11. **Gap Analysis** - Areas where standards do not fully cover EU AI Act requirements
+12. **Compliance Evidence Matrix** - Summary table mapping each requirement to standard clauses and evidence
+13. **Recommendations** - Actions to close identified gaps
+
+## Output Format:
+Return ONLY a valid JSON object: {"sections":[{"title":"Section Title","content":"Full section content"}]}
+
+CRITICAL: No markdown formatting. Plain prose only. Each section should be 2-4 paragraphs minimum.`,
 };
 
 function buildUserMessage(
@@ -732,6 +1011,18 @@ function buildUserMessage(
     monitoring_log: "Monitoring Log Template",
     ai_disclosure_notice: "AI Disclosure Notice",
     synthetic_content_policy: "Synthetic Content Policy",
+    // Phase 4 - Missing EU AI Act Documents
+    qms: "Quality Management System",
+    post_market_monitoring: "Post-Market Monitoring Plan",
+    incident_response_plan: "Incident Response Plan",
+    fria: "Fundamental Rights Impact Assessment",
+    cybersecurity_assessment: "Cybersecurity Assessment",
+    transparency_notice: "Transparency Notice",
+    eu_db_registration: "EU Database Registration Form",
+    ce_marking: "CE Marking Declaration",
+    conformity_declaration: "EU Declaration of Conformity",
+    change_management: "Change Management Procedures",
+    standards_mapping: "Standards Mapping Document",
   };
 
   contextParts.push(`## Instructions`);
@@ -852,10 +1143,11 @@ Deno.serve(async (req: Request) => {
     try {
       // Clean the response - remove any markdown code blocks if present
       let jsonText = textContent.text.trim();
+      
+      // Remove various forms of markdown code block wrappers
       if (jsonText.startsWith("```json")) {
         jsonText = jsonText.slice(7);
-      }
-      if (jsonText.startsWith("```")) {
+      } else if (jsonText.startsWith("```")) {
         jsonText = jsonText.slice(3);
       }
       if (jsonText.endsWith("```")) {
@@ -863,19 +1155,79 @@ Deno.serve(async (req: Request) => {
       }
       jsonText = jsonText.trim();
       
+      // Try to find JSON object in the response if it's wrapped in other text
+      const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[0];
+      }
+      
       generatedContent = JSON.parse(jsonText);
     } catch (parseError) {
-      console.error("Failed to parse AI response:", textContent.text);
-      return new Response(
-        JSON.stringify({
-          error: "Failed to parse AI response",
-          rawContent: textContent.text,
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+      console.error("Failed to parse AI response, attempting fallback extraction:", textContent.text.substring(0, 500));
+      
+      // Fallback: Try to extract sections manually from the text
+      try {
+        const rawText = textContent.text;
+        const sections: { title: string; content: string }[] = [];
+        
+        // Try to find section patterns in the text
+        const sectionPatterns = [
+          /##\s*\d*\.?\s*\*?\*?([^*\n]+)\*?\*?\n([\s\S]*?)(?=##\s*\d*\.?\s*\*?\*?[^*\n]+\*?\*?\n|$)/g,
+          /###\s*\d*\.?\s*([^\n]+)\n([\s\S]*?)(?=###\s*\d*\.?\s*[^\n]+\n|$)/g,
+          /\*\*\d*\.?\s*([^*]+)\*\*\n([\s\S]*?)(?=\*\*\d*\.?\s*[^*]+\*\*\n|$)/g,
+        ];
+        
+        for (const pattern of sectionPatterns) {
+          let match;
+          while ((match = pattern.exec(rawText)) !== null) {
+            const title = match[1].trim().replace(/\*+/g, '');
+            const content = match[2].trim()
+              .replace(/\*\*/g, '')
+              .replace(/\*/g, '')
+              .replace(/^#+\s*/gm, '')
+              .replace(/^-\s+/gm, '• ');
+            
+            if (title && content && content.length > 50) {
+              sections.push({ title, content });
+            }
+          }
+          if (sections.length >= 3) break;
         }
-      );
+        
+        if (sections.length >= 3) {
+          generatedContent = { sections };
+          console.log("Successfully extracted sections using fallback method:", sections.length);
+        } else {
+          // Last resort: Create a single section with all content
+          const cleanedContent = rawText
+            .replace(/```[a-z]*\n?/g, '')
+            .replace(/\*\*/g, '')
+            .replace(/\*/g, '')
+            .replace(/^#+\s*/gm, '')
+            .trim();
+          
+          generatedContent = {
+            sections: [{
+              title: "Document Content",
+              content: cleanedContent.substring(0, 10000)
+            }]
+          };
+          console.log("Using single-section fallback");
+        }
+      } catch (fallbackError) {
+        console.error("Fallback extraction also failed:", fallbackError);
+        return new Response(
+          JSON.stringify({
+            error: "Failed to parse AI response",
+            details: "The AI generated content in an unexpected format. Please try again.",
+            rawContentPreview: textContent.text.substring(0, 500),
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
     }
 
     // Return the generated content

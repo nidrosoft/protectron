@@ -20,6 +20,7 @@ import { GettingStartedChecklist, WhatsNextRecommendation } from "@/components/w
 import { useWalkthrough } from "@/contexts/walkthrough-context";
 import { useDashboard } from "@/hooks";
 import { riskLevelConfig, statusConfig, daysUntil } from "./data/mock-data";
+import { QuickComplyBanner } from "./components/QuickComplyBanner";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -117,6 +118,9 @@ export default function DashboardPage() {
           </Dropdown.Root>
         </div>
       </div>
+
+      {/* Quick Comply Banner */}
+      <QuickComplyBanner />
 
       {/* Key Metrics Row */}
       <MetricsSection
